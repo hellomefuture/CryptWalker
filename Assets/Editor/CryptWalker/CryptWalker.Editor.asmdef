@@ -2,7 +2,8 @@
     "name": "CryptWalker.Editor",
     "rootNamespace": "CryptWalker.Main.Editor",
     "references": [
-        "CryptWalker.Main.Runtime"
+        "CryptWalker.Main.Runtime",
+        "CryptWalker.HotUpdate"
     ],
     "includePlatforms": [
         "Editor"
