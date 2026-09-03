@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.code-philosophy.hybridclr": {
+      "version": "file:com.code-philosophy.hybridclr",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.2d.animation": {
       "version": "9.2.0",
       "depth": 1,
@@ -200,6 +206,13 @@
       "dependencies": {
         "com.unity.render-pipelines.core": "14.0.10"
       }
+    },
+    "com.unity.scriptablebuildpipeline": {
+      "version": "1.20.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
     },
     "com.unity.searcher": {
       "version": "4.9.2",

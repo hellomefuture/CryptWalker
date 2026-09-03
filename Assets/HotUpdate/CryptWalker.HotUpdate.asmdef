@@ -1,0 +1,16 @@
+{
+    "name": "CryptWalker.HotUpdate",
+    "rootNamespace": "CryptWalker.HotUpdate",
+    "references": [
+        "CryptWalker.Main.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
