@@ -49,9 +49,9 @@ namespace CryptWalker.HotUpdate.GameFlow
         public T GetCurrentState<T>() where T : FlowState => _current as T;
         public FlowState CurrentState => _current;
 
-        // ============================================================
+    
         // 内建状态：开发期骨架，业务可自由替换
-        // ============================================================
+        
 
         /// <summary>启动态：链路验证后自动进入主菜单</summary>
         public class BootState : FlowState

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using UnityEngine;
+using CryptWalker.HotUpdate.Core;
 
 namespace CryptWalker.HotUpdate.Data
 {
@@ -13,8 +13,11 @@ namespace CryptWalker.HotUpdate.Data
     ///   - id = 配置唯一ID(也是 asset 名)
     ///   - 最终 address = asset://data/{resourceFolder}/{id}
     ///   - DataService 会去 YooAsset 拉 address 对应的 SO 资产
+    ///
+    /// 实现 IModule：作为"配置模块"注册进 Modules，由 Modules.InitAll() 统一启动，
+    /// GameRoot 不再直接调用（框架设计 3.9 模块化）。
     /// </summary>
-    public sealed class DataService
+    public sealed class DataService : IModule
     {
         private static readonly DataService s_instance = new DataService();
         public static DataService Instance => s_instance;
@@ -24,10 +27,17 @@ namespace CryptWalker.HotUpdate.Data
 
         private DataService() { }
 
-        public void Initialize()
+        /// <summary>IModule.Init：由 Modules.InitAll() 在启动时调用</summary>
+        public void Init()
         {
             _cache.Clear();
-            Debug.Log("[DataService] 数据服务就绪");
+            Log.Info("[DataService] 数据服务就绪");
+        }
+
+        /// <summary>IModule.Shutdown：退出/重载时清空缓存并释放句柄</summary>
+        public void Shutdown()
+        {
+            ClearAll();
         }
 
         /// <summary>统一地址构造：asset://data/{resourceFolder}/{id}</summary>
@@ -43,7 +53,7 @@ namespace CryptWalker.HotUpdate.Data
             T loaded = await CryptWalker.Main.Service.YooAssetService.LoadAssetAsync<T>(address);
             if (loaded == null)
             {
-                Debug.LogError($"[DataService] 加载配置失败: {address}");
+                Log.Error($"[DataService] 加载配置失败: {address}");
                 return null;
             }
 
@@ -64,7 +74,7 @@ namespace CryptWalker.HotUpdate.Data
             if (config == null) return;
             string address = MakeAddress(resourceFolder, id);
             _cache[address] = config;
-            Debug.Log($"[DataService] 注入配置: {address}");
+            Log.Info($"[DataService] 注入配置: {address}");
         }
 
         /// <summary>清理某地址缓存（热更后让业务重新加载）</summary>
