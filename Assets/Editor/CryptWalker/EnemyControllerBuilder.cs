@@ -57,7 +57,17 @@ namespace CryptWalker.EditorTools
             int states = 0;
             foreach (var action in Actions)
             {
-                foreach (var dir in Dirs)
+                foreach (var direction in Dirs)
+                {
+                    string clipName = $"{enemy}_{action}{direction}";
+                    var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{dir}/{clipName}.anim");
+                    if (clip == null) continue;   // 该动作缺某方向则跳过
+
+                    var state = sm.AddState(clipName);
+                    state.motion = clip;
+                    if (action == "Idle" && direction == "South") defaultState = state;
+                    states++;
+                }
                 {
                     string clipName = $"{enemy}_{action}{dir}";
                     var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{dir}/{clipName}.anim");

@@ -3,100 +3,84 @@ using UnityEngine;
 namespace CryptWalker.HotUpdate.Entity.Player
 {
     /// <summary>
-    /// 4 方向玩家控制 —— 驱动 player.controller。
-    ///
-    /// ═══ 与 player.controller 的协议（必须严格一致）═══
-    ///   FaceDir (Int):   1 = South（朝下 S）
-    ///                    2 = Left  （朝左 A）
-    ///                    3 = Right （朝右 D）
-    ///                    4 = North （朝上 W）
-    ///   IsMoving (Bool): true = 正在走路 / false = 待机或攻击中停下
-    ///   Attack (Trigger): 一次性触发
-    ///
-    /// ═══ 移动 ═══
-    ///   WASD 输入保留 8 向（斜向也走），动画按 4 向离散（y 优先）。
-    ///   _lastDir 缓存上次的 4 向朝向，松手后保留，确保 Animator 切回正确 Idle。
-    ///
-    /// ═══ 攻击 ═══
-    ///   鼠标左键：触发 Attack + 锁定 0.5s 硬直（不移动、不改朝向）。
+    /// 玩家控制器（纯 FSM + 代码 Play 动画）。
+    /// 不再使用 Animator 参数（FaceDir/IsMoving/Attack），动画由 FSM 状态直接
+    /// Animator.Play("{动作}{方向}") 驱动 —— 连招/技能天然支持（加状态类即可）。
+    /// 职责：读输入 + 驱动 PlayerFSM + 提供状态调用接口（PlayAction/朝向/移动）。
     /// </summary>
     public class PlayerController : MonoBehaviour
     {
         [Header("移动")]
-        [Tooltip("移动速度（单位/秒）")]
         [SerializeField] private float moveSpeed = 3f;
 
-        [Header("动画参数名（与 player.controller 一致）")]
-        [SerializeField] private string faceDirParam = "FaceDir";
-        [SerializeField] private string movingParam   = "IsMoving";
-        [SerializeField] private string attackParam   = "Attack";
-
         [Header("战斗")]
-        [Tooltip("攻击硬直时长（秒）")]
+        [Tooltip("攻击硬直时长（秒）。攻击期间不响应移动。")]
         [SerializeField] private float attackLockDuration = 0.5f;
 
-        // 朝向协议常量
+        // 方向协议：1=South 2=Left 3=Right 4=North（与敌人/素材一致）
         private const int DIR_South = 1;
         private const int DIR_Left  = 2;
         private const int DIR_Right = 3;
         private const int DIR_North = 4;
 
-        private Animator _anim;
-        // _lastDir: 缓存上次的 4 向朝向（即使松手也保持），Animator 据此切回 IdleX
-        private int _lastDir = DIR_South;
-        private float _attackLockUntil = 0f;
+        // 方向值 → 名称后缀（拼 clip 名用）："Walk" + "South" = "WalkSouth"
+        private static readonly string[] DirName = { "", "South", "Left", "Right", "North" };
 
+        public Animator Anim { get; private set; }
+        public PlayerFSM Fsm { get; private set; }
         public Vector2 MoveInput { get; private set; }
+        public int FacingDir { get; private set; } = DIR_South;
+
+        public float AttackLockDuration => attackLockDuration;
         public bool IsMoving => MoveInput.sqrMagnitude > 0.01f;
-        public int FacingDir => _lastDir;
-        public bool IsAttacking => Time.time < _attackLockUntil;
+        public bool IsAttacking => Fsm != null && Fsm.IsAttacking;
 
         private void Awake()
         {
-            if (_anim == null) _anim = GetComponent<Animator>();
+            Anim = GetComponent<Animator>();
+            Fsm = new PlayerFSM(this);
         }
+
+        private void Start() => Fsm.Start();
 
         private void Update()
         {
-            if (_anim == null) return;
-
-            // 1) 读输入
-            float h = Input.GetAxisRaw("Horizontal");
-            float v = Input.GetAxisRaw("Vertical");
-            MoveInput = new Vector2(h, v);
-
-            bool isAttacking = IsAttacking;
-            bool hasInput = MoveInput.sqrMagnitude > 0.01f;
-
-            // 2) 朝向：仅在非攻击期 + 有输入时计算并缓存
-            //    松手后 _lastDir 保持，Animator 用它切到对应 IdleX
-            if (!isAttacking && hasInput)
-            {
-                _lastDir = MoveToDirIndex(MoveInput);
-            }
-
-            // 3) 写 Animator：每帧都写 FaceDir + IsMoving
-            //    原因：Animator 每帧末统一求值，每帧写能保证方向跟得上
-            _anim.SetInteger(faceDirParam, _lastDir);
-            _anim.SetBool(movingParam, !isAttacking && hasInput);
-
-            // 4) 移动：攻击期不响应
-            if (!isAttacking && hasInput)
-            {
-                Vector3 delta = new Vector3(MoveInput.x, MoveInput.y, 0f).normalized
-                                * (moveSpeed * Time.deltaTime);
-                transform.position += delta;
-            }
-
-            // 5) 攻击
-            if (Input.GetMouseButtonDown(0))
-            {
-                _anim.SetTrigger(attackParam);
-                _attackLockUntil = Time.time + attackLockDuration;
-            }
+            ReadInput();
+            Fsm.Tick();
         }
 
-        /// <summary>8 向输入 → 4 向离散（y 优先，斜向取竖直）</summary>
+        private void ReadInput()
+        {
+            MoveInput = new Vector2(
+                Input.GetAxisRaw("Horizontal"),
+                Input.GetAxisRaw("Vertical"));
+        }
+
+        // ==================== 状态类调用的接口 ====================
+
+        /// <summary>按当前朝向播动画：Play("Walk" + "South") = "WalkSouth"</summary>
+        public void PlayAction(string action)
+        {
+            if (Anim == null) return;
+            Anim.Play($"{action}{DirName[FacingDir]}");
+        }
+
+        /// <summary>更新朝向（只在有输入时改，保持上次朝向）</summary>
+        public void UpdateFacing()
+        {
+            if (MoveInput.sqrMagnitude <= 0.01f) return;
+            FacingDir = MoveToDirIndex(MoveInput);
+        }
+
+        /// <summary>8 向移动（斜向也走，normalized 保证速度一致）</summary>
+        public void Move()
+        {
+            Vector3 delta = new Vector3(MoveInput.x, MoveInput.y, 0f).normalized
+                            * (moveSpeed * Time.deltaTime);
+            transform.position += delta;
+        }
+
+        /// <summary>8 向输入 → 4 向朝向（y 优先，与敌人一致）</summary>
         private int MoveToDirIndex(Vector2 dir)
         {
             if (Mathf.Abs(dir.y) > Mathf.Abs(dir.x))

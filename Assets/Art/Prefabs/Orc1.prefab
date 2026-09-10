@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1602863397210227380}
   - component: {fileID: 2056518138515545630}
   - component: {fileID: 188941671487358775}
+  - component: {fileID: 6242417171249590968}
   m_Layer: 0
   m_Name: Orc1
   m_TagString: Untagged
@@ -106,3 +107,22 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &6242417171249590968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1621179103482416664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02683a32b4755724892daeff061f355e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyName: Orc1
+  maxHp: 100
+  moveSpeed: 2
+  sightRange: 6
+  attackRange: 1.5
+  attackInterval: 1.2
+  _target: {fileID: 0}

@@ -92,7 +92,9 @@ namespace CryptWalker.EditorTools
                 AnimationUtility.SetObjectReferenceCurve(clip, binding, keys);
 
                 var settings = AnimationUtility.GetAnimationClipSettings(clip);
-                settings.loopTime = action.Equals("idle", System.StringComparison.OrdinalIgnoreCase);
+                // 循环动作：Idle/Walk/Run（持续播放）；Attack/Hurt/Death 播一遍
+                string a = action.ToLowerInvariant();
+                settings.loopTime = a is "idle" or "walk" or "run";
                 AnimationUtility.SetAnimationClipSettings(clip, settings);
 
                 string clipName = $"{enemy}_{actionName}{dir}";

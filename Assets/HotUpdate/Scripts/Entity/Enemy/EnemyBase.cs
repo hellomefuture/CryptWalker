@@ -22,11 +22,14 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         [SerializeField] private float attackRange = 1.5f;    // 近战攻击范围
         [SerializeField] private float attackInterval = 1.2f; // 攻击间隔
 
+        [Header("目标（测试时在 Inspector 拖玩家，正式由索敌系统注入）")]
+        [SerializeField] private Transform _target;
+
         private static readonly string[] DirName = { "", "South", "Left", "Right", "North" };
 
         public Animator Anim { get; private set; }
         public EnemyFSM Fsm { get; private set; }
-        public Transform Target { get; set; }        // 追击目标（由外部/索敌注入）
+        public Transform Target { get => _target; set => _target = value; }
         public float Hp { get; private set; }
         public int Facing { get; private set; } = 1; // 1=South 2=Left 3=Right 4=North
         public float MoveSpeed => moveSpeed;
@@ -49,6 +52,11 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         public void PlayAction(string action)
         {
             if (Anim == null) return;
+            if (Anim.runtimeAnimatorController == null)
+            {
+                Debug.LogWarning($"[EnemyBase] {name} 的 Animator 没有挂 controller，无法播 {action}。请在 Inspector 把 {enemyName}.controller 拖到 Animator 的 Controller 槽");
+                return;
+            }
             Anim.Play($"{enemyName}_{action}{DirName[Facing]}");
         }
 
