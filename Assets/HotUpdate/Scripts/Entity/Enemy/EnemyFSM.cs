@@ -65,15 +65,24 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
     public class PatrolState : FsmState<EnemyBase>
     {
         private Vector3 _target;
+        private int _lastFacing;
         public PatrolState(EnemyBase owner) : base(owner) { }
         public override void OnEnter()
         {
             Owner.PlayAction("Walk");
+            _lastFacing = Owner.Facing;
             PickNewPoint();
         }
         public override void OnUpdate()
         {
             if (Owner.TargetInSight()) { Owner.Fsm.ChangeToChase(); return; }
+
+            Owner.LookAtPoint(_target);
+            if(Owner.Facing != _lastFacing)
+            {
+                _lastFacing = Owner.Facing;
+                Owner.PlayAction("Walk");
+            }
 
             Vector3 to = _target - Owner.transform.position;
             if (to.sqrMagnitude > 0.25f)
@@ -110,10 +119,11 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         }
     }
 
-    /// <summary>攻击：播 Attack（不移动），攻击间隔后回到追击/巡逻</summary>
+    /// <summary>攻击：播 Attack（不移动），挥击帧命中，攻击间隔后回追击/巡逻</summary>
     public class AttackState : FsmState<EnemyBase>
     {
         private float _attackEnd;
+        private float _hitTime = -1;   // 命中时机；-1 = 已命中
         private int _lastFacing;
         public AttackState(EnemyBase owner) : base(owner) { }
         public override void OnEnter()
@@ -121,6 +131,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
             Owner.LookAtTarget();
             _lastFacing = Owner.Facing;
             Owner.PlayAction("Attack");
+            _hitTime = Time.time + Owner.AttackHitDelay;   // 延迟到动画挥击帧
             _attackEnd = Time.time + Owner.AttackInterval;
         }
         public override void OnUpdate()
@@ -130,6 +141,12 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
             {
                 _lastFacing = Owner.Facing;
                 Owner.PlayAction("Attack");
+            }
+            // 到挥击帧且还没命中 → 造成伤害（只一次）
+            if (_hitTime >= 0 && Time.time >= _hitTime)
+            {
+                Owner.PerformAttack();
+                _hitTime = -1;
             }
             if (Time.time >= _attackEnd)
             {
@@ -147,7 +164,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         public override void OnEnter()
         {
             Owner.PlayAction("Hurt");
-            _hitEnd = Time.time + 0.2f;
+            _hitEnd = Time.time + 0.3f;
         }
         public override void OnUpdate()
         {
