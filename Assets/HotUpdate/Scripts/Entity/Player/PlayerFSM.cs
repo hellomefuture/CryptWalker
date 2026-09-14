@@ -79,20 +79,29 @@ namespace CryptWalker.HotUpdate.Entity.Player
     /// <summary>攻击：播 Attack{方向}（定身），硬直结束后按输入回 Walk/Idle</summary>
     public class AttackState : FsmState<PlayerController>
     {
-        private float _end;
+        private float _end;  //硬直结束时间
+        private float _hitTime = -1;  //命中时机； -1表示已经打过
         public AttackState(PlayerController owner) : base(owner) { }
         public override void OnEnter()
         {
             Owner.PlayAction("Attack");   // 攻击方向 = 进入时的 Facing
+            _hitTime = Time.time + Owner.AttackHitDelay; // 命中延后到动画中段
             _end = Time.time + Owner.AttackLockDuration;
         }
         public override void OnUpdate()
         {
-            if (Time.time >= _end)
+            if (_hitTime >= 0 && Time.time >= _hitTime)
             {
-                if (Owner.MoveInput.sqrMagnitude > 0.01f) Owner.Fsm.ChangeToWalk();
-                else Owner.Fsm.ChangeToIdle();
+                Owner.PerformAttack();
+                _hitTime = -1 ; // 标记已打，防止每帧重复打
+            } 
+
+            if (Time.time >= _end)
+            { 
+                if (Owner.MoveInput.sqrMagnitude > 0.01f ) Owner.Fsm.ChangeToWalk();
+                 else Owner.Fsm.ChangeToIdle();
             }
-        }
+        } 
+        
     }
 }
