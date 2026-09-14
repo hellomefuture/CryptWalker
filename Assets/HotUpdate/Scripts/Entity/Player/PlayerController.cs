@@ -12,8 +12,14 @@ namespace CryptWalker.HotUpdate.Entity.Player
     /// </summary>
     public class PlayerController : MonoBehaviour
     {
+        [Header("角色")]
+        [Tooltip("角色名（动画 clip 前缀，如 Swordsman_IdleSouth；加主角时改这个）")]
+        [SerializeField] private string characterName = "Swordsman";
+
         [Header("移动")]
         [SerializeField] private float moveSpeed = 3f;
+        [Tooltip("奔跑速度（Shift 加速，播 Run 动画）")]
+        [SerializeField] private float runSpeed = 5f;
 
         [Header("战斗")]
         [Tooltip("攻击硬直时长（秒）。攻击期间不响应移动。")]
@@ -51,11 +57,13 @@ namespace CryptWalker.HotUpdate.Entity.Player
         public int FacingDir { get; private set; } = DIR_South;
 
         public float AttackLockDuration => attackLockDuration;
+        public float AttackHitDelay => attackHitDelay;
         public bool IsMoving => MoveInput.sqrMagnitude > 0.01f;
         public bool IsAttacking => Fsm != null && Fsm.IsAttacking;
-        public float AttackHitDelay => attackHitDelay;
         public float Hp { get; private set; }
         public bool IsDead => Hp <= 0f;
+        public bool IsRunning => Input.GetKey(KeyCode.LeftShift) && MoveInput.sqrMagnitude > 0.01f;
+        private float CurrentSpeed => IsRunning ? runSpeed : moveSpeed;
 
         private void Awake()
         {
@@ -86,11 +94,11 @@ namespace CryptWalker.HotUpdate.Entity.Player
 
         // ==================== 状态类调用的接口 ====================
 
-        /// <summary>按当前朝向播动画：Play("Walk" + "South") = "WalkSouth"</summary>
+        /// <summary>按当前朝向播动画：Play("Walk") = "Swordsman_WalkSouth"</summary>
         public void PlayAction(string action)
         {
             if (Anim == null) return;
-            Anim.Play($"{action}{DirName[FacingDir]}");
+            Anim.Play($"{characterName}_{action}{DirName[FacingDir]}");
         }
 
         /// <summary>更新朝向（只在有输入时改，保持上次朝向）</summary>
@@ -100,11 +108,11 @@ namespace CryptWalker.HotUpdate.Entity.Player
             FacingDir = MoveToDirIndex(MoveInput);
         }
 
-        /// <summary>8 向移动（斜向也走，normalized 保证速度一致）</summary>
+        /// <summary>8 向移动（斜向也走，normalized 保证速度一致；Shift 奔跑）</summary>
         public void Move()
         {
             Vector3 delta = new Vector3(MoveInput.x, MoveInput.y, 0f).normalized
-                            * (moveSpeed * Time.deltaTime);
+                            * (CurrentSpeed * Time.deltaTime);
             transform.position += delta;
         }
 
@@ -150,16 +158,14 @@ namespace CryptWalker.HotUpdate.Entity.Player
 
         // ==================== 受击 ====================
 
-        /// <summary>玩家受击：扣血 + 闪红反馈（暂无 Hurt 动画，先颜色表现）</summary>
+        /// <summary>玩家受击：扣血 + 闪红 + 进 Hit 硬直（播 Hurt）；死亡进 Death</summary>
         public void TakeDamage(float damage)
         {
             if (IsDead) return;
             Hp -= damage;
             StartCoroutine(FlashRed());
-            if (IsDead)
-            {
-                Debug.Log("[Player] 玩家死亡（后续接死亡流程/结算）");
-            }
+            if (IsDead) Fsm.ChangeToDeath();
+            else Fsm.ChangeToHit();
         }
 
         /// <summary>受击闪红 0.1s：白 → 红 → 白</summary>

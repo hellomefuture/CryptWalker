@@ -96,7 +96,7 @@ Animator:
   m_GameObject: {fileID: 1635846707614132642}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 9ef91d3fbe54541408468a67f8ee7b22, type: 2}
+  m_Controller: {fileID: 9100000, guid: 6935a90824b6e4f43a71e60c41ae2145, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -119,5 +119,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed7a6a29bf71d934687b13736ad29f2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterName: Swordsman
   moveSpeed: 3
+  runSpeed: 5
   attackLockDuration: 0.5
+  attackRange: 0.25
+  attackWidth: 0.35
+  attackDamage: 25
+  attackHitDelay: 0.2
+  maxHp: 100
