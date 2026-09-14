@@ -17,7 +17,7 @@ namespace CryptWalker.EditorTools
     public static class PlayerControllerBuilder
     {
         private const string ClipDir    = "Assets/Art/PlayerAnimator/SwordsmanAnimation";
-        private const string CtrlPath   = "Assets/Art/PlayerAnimator/player.controller";
+        private const string CtrlPath   = "Assets/Art/PlayerAnimator/SwordsmanAnimation/player.controller";
         private const string Menu       = "Tools/CryptWalker/生成玩家AnimatorController";
 
         [MenuItem(Menu)]
