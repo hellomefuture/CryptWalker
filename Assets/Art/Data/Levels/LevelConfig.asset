@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d86c350b819cbbf41a45452832d52473, type: 3}
+  m_Name: LevelConfig
+  m_EditorClassIdentifier: 
+  playerPrefab: {fileID: 1635846707614132642, guid: b2dd592061f8b1f418021526365596c3, type: 3}
+  orc1Prefab: {fileID: 1621179103482416664, guid: 0df16ccda6516c6498b7ac55211d52c4, type: 3}
+  orc2Prefab: {fileID: 6768241022669496423, guid: b4f2163d0e44cbd4f8e1077030f741aa, type: 3}
+  orc3Prefab: {fileID: 5826092957022104053, guid: 2b73aba300b423943ab4a4cd63d2e79e, type: 3}
+  roomTileset: {fileID: 11400000, guid: 3a9d3180bd6bacb489e3b89569e5b9bf, type: 2}
+  gridSize: 6
+  roomWidth: 21
+  roomHeight: 15
+  corridorWidth: 5
+  roomCount: 6
+  seed: 80

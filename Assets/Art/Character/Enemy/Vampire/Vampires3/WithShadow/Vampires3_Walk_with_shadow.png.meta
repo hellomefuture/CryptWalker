@@ -48,7 +48,7 @@ TextureImporter:
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 64
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
@@ -97,7 +97,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_0_0
+      name: vampires3_walk_with_shadow_0_0
       rect:
         serializedVersion: 2
         x: 0
@@ -118,7 +118,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_0_1
+      name: vampires3_walk_with_shadow_0_1
       rect:
         serializedVersion: 2
         x: 64
@@ -139,7 +139,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_0_2
+      name: vampires3_walk_with_shadow_0_2
       rect:
         serializedVersion: 2
         x: 128
@@ -160,7 +160,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_0_3
+      name: vampires3_walk_with_shadow_0_3
       rect:
         serializedVersion: 2
         x: 192
@@ -181,7 +181,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_0_4
+      name: vampires3_walk_with_shadow_0_4
       rect:
         serializedVersion: 2
         x: 256
@@ -202,7 +202,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_0_5
+      name: vampires3_walk_with_shadow_0_5
       rect:
         serializedVersion: 2
         x: 320
@@ -223,7 +223,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_1_0
+      name: vampires3_walk_with_shadow_1_0
       rect:
         serializedVersion: 2
         x: 0
@@ -244,7 +244,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_1_1
+      name: vampires3_walk_with_shadow_1_1
       rect:
         serializedVersion: 2
         x: 64
@@ -265,7 +265,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_1_2
+      name: vampires3_walk_with_shadow_1_2
       rect:
         serializedVersion: 2
         x: 128
@@ -286,7 +286,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_1_3
+      name: vampires3_walk_with_shadow_1_3
       rect:
         serializedVersion: 2
         x: 192
@@ -307,7 +307,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_1_4
+      name: vampires3_walk_with_shadow_1_4
       rect:
         serializedVersion: 2
         x: 256
@@ -328,7 +328,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_1_5
+      name: vampires3_walk_with_shadow_1_5
       rect:
         serializedVersion: 2
         x: 320
@@ -349,7 +349,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_2_0
+      name: vampires3_walk_with_shadow_2_0
       rect:
         serializedVersion: 2
         x: 0
@@ -370,7 +370,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_2_1
+      name: vampires3_walk_with_shadow_2_1
       rect:
         serializedVersion: 2
         x: 64
@@ -391,7 +391,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_2_2
+      name: vampires3_walk_with_shadow_2_2
       rect:
         serializedVersion: 2
         x: 128
@@ -412,7 +412,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_2_3
+      name: vampires3_walk_with_shadow_2_3
       rect:
         serializedVersion: 2
         x: 192
@@ -433,7 +433,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_2_4
+      name: vampires3_walk_with_shadow_2_4
       rect:
         serializedVersion: 2
         x: 256
@@ -454,7 +454,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_2_5
+      name: vampires3_walk_with_shadow_2_5
       rect:
         serializedVersion: 2
         x: 320
@@ -475,7 +475,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_3_0
+      name: vampires3_walk_with_shadow_3_0
       rect:
         serializedVersion: 2
         x: 0
@@ -496,7 +496,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_3_1
+      name: vampires3_walk_with_shadow_3_1
       rect:
         serializedVersion: 2
         x: 64
@@ -517,7 +517,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_3_2
+      name: vampires3_walk_with_shadow_3_2
       rect:
         serializedVersion: 2
         x: 128
@@ -538,7 +538,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_3_3
+      name: vampires3_walk_with_shadow_3_3
       rect:
         serializedVersion: 2
         x: 192
@@ -559,7 +559,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_3_4
+      name: vampires3_walk_with_shadow_3_4
       rect:
         serializedVersion: 2
         x: 256
@@ -580,7 +580,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Walk_with_shadow_3_5
+      name: vampires3_walk_with_shadow_3_5
       rect:
         serializedVersion: 2
         x: 320
@@ -641,6 +641,30 @@ TextureImporter:
       Vampires3_Walk_with_shadow_3_5: 0
       Vampires3_Walk_with_shadow_4: 1994559301871789246
       Vampires3_Walk_with_shadow_5: 6178899212347130417
+      vampires3_walk_with_shadow_0_0: 0
+      vampires3_walk_with_shadow_0_1: 0
+      vampires3_walk_with_shadow_0_2: 0
+      vampires3_walk_with_shadow_0_3: 0
+      vampires3_walk_with_shadow_0_4: 0
+      vampires3_walk_with_shadow_0_5: 0
+      vampires3_walk_with_shadow_1_0: 0
+      vampires3_walk_with_shadow_1_1: 0
+      vampires3_walk_with_shadow_1_2: 0
+      vampires3_walk_with_shadow_1_3: 0
+      vampires3_walk_with_shadow_1_4: 0
+      vampires3_walk_with_shadow_1_5: 0
+      vampires3_walk_with_shadow_2_0: 0
+      vampires3_walk_with_shadow_2_1: 0
+      vampires3_walk_with_shadow_2_2: 0
+      vampires3_walk_with_shadow_2_3: 0
+      vampires3_walk_with_shadow_2_4: 0
+      vampires3_walk_with_shadow_2_5: 0
+      vampires3_walk_with_shadow_3_0: 0
+      vampires3_walk_with_shadow_3_1: 0
+      vampires3_walk_with_shadow_3_2: 0
+      vampires3_walk_with_shadow_3_3: 0
+      vampires3_walk_with_shadow_3_4: 0
+      vampires3_walk_with_shadow_3_5: 0
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

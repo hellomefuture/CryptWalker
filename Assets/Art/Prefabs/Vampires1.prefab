@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2756306800281565740}
   - component: {fileID: 592053640067049220}
   - component: {fileID: 3360110835614798879}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Vampires1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -71,15 +71,15 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
+  m_SortingLayerID: 89616123
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 743171202403199117, guid: b95a6bd1860fd864fa5831e5f9e25373, type: 3}
+  m_Sprite: {fileID: 657273397746496890, guid: b95a6bd1860fd864fa5831e5f9e25373, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 4, y: 4}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1

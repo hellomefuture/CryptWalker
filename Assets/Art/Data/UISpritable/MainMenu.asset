@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 746b2096e8d3e444384eba7bf553f707, type: 3}
+  m_Name: MainMenu
+  m_EditorClassIdentifier: 
+  panelId: MainMenu
+  layer: 100
+  address: F:\Unity\UnityProject\CryptWalker\Assets\Art\Prefabs\UI_prefabs
+  prefab: {fileID: 370902145240245125, guid: 63502affdcf3e15478a4a63b41c36559, type: 3}

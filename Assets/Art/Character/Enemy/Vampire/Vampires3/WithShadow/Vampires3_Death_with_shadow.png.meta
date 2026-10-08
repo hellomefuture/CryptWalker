@@ -48,7 +48,7 @@ TextureImporter:
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 64
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
@@ -97,7 +97,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_0
+      name: vampires3_death_with_shadow_0_0
       rect:
         serializedVersion: 2
         x: 0
@@ -118,7 +118,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_1
+      name: vampires3_death_with_shadow_0_1
       rect:
         serializedVersion: 2
         x: 64
@@ -139,7 +139,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_2
+      name: vampires3_death_with_shadow_0_2
       rect:
         serializedVersion: 2
         x: 128
@@ -160,7 +160,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_3
+      name: vampires3_death_with_shadow_0_3
       rect:
         serializedVersion: 2
         x: 192
@@ -181,7 +181,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_4
+      name: vampires3_death_with_shadow_0_4
       rect:
         serializedVersion: 2
         x: 256
@@ -202,7 +202,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_5
+      name: vampires3_death_with_shadow_0_5
       rect:
         serializedVersion: 2
         x: 320
@@ -223,7 +223,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_6
+      name: vampires3_death_with_shadow_0_6
       rect:
         serializedVersion: 2
         x: 384
@@ -244,7 +244,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_7
+      name: vampires3_death_with_shadow_0_7
       rect:
         serializedVersion: 2
         x: 448
@@ -265,7 +265,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_8
+      name: vampires3_death_with_shadow_0_8
       rect:
         serializedVersion: 2
         x: 512
@@ -286,7 +286,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_9
+      name: vampires3_death_with_shadow_0_9
       rect:
         serializedVersion: 2
         x: 576
@@ -307,7 +307,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_0_10
+      name: vampires3_death_with_shadow_0_10
       rect:
         serializedVersion: 2
         x: 640
@@ -328,7 +328,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_0
+      name: vampires3_death_with_shadow_1_0
       rect:
         serializedVersion: 2
         x: 0
@@ -349,7 +349,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_1
+      name: vampires3_death_with_shadow_1_1
       rect:
         serializedVersion: 2
         x: 64
@@ -370,7 +370,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_2
+      name: vampires3_death_with_shadow_1_2
       rect:
         serializedVersion: 2
         x: 128
@@ -391,7 +391,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_3
+      name: vampires3_death_with_shadow_1_3
       rect:
         serializedVersion: 2
         x: 192
@@ -412,7 +412,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_4
+      name: vampires3_death_with_shadow_1_4
       rect:
         serializedVersion: 2
         x: 256
@@ -433,7 +433,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_5
+      name: vampires3_death_with_shadow_1_5
       rect:
         serializedVersion: 2
         x: 320
@@ -454,7 +454,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_6
+      name: vampires3_death_with_shadow_1_6
       rect:
         serializedVersion: 2
         x: 384
@@ -475,7 +475,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_7
+      name: vampires3_death_with_shadow_1_7
       rect:
         serializedVersion: 2
         x: 448
@@ -496,7 +496,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_8
+      name: vampires3_death_with_shadow_1_8
       rect:
         serializedVersion: 2
         x: 512
@@ -517,7 +517,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_9
+      name: vampires3_death_with_shadow_1_9
       rect:
         serializedVersion: 2
         x: 576
@@ -538,7 +538,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_1_10
+      name: vampires3_death_with_shadow_1_10
       rect:
         serializedVersion: 2
         x: 640
@@ -559,7 +559,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_0
+      name: vampires3_death_with_shadow_2_0
       rect:
         serializedVersion: 2
         x: 0
@@ -580,7 +580,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_1
+      name: vampires3_death_with_shadow_2_1
       rect:
         serializedVersion: 2
         x: 64
@@ -601,7 +601,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_2
+      name: vampires3_death_with_shadow_2_2
       rect:
         serializedVersion: 2
         x: 128
@@ -622,7 +622,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_3
+      name: vampires3_death_with_shadow_2_3
       rect:
         serializedVersion: 2
         x: 192
@@ -643,7 +643,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_4
+      name: vampires3_death_with_shadow_2_4
       rect:
         serializedVersion: 2
         x: 256
@@ -664,7 +664,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_5
+      name: vampires3_death_with_shadow_2_5
       rect:
         serializedVersion: 2
         x: 320
@@ -685,7 +685,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_6
+      name: vampires3_death_with_shadow_2_6
       rect:
         serializedVersion: 2
         x: 384
@@ -706,7 +706,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_7
+      name: vampires3_death_with_shadow_2_7
       rect:
         serializedVersion: 2
         x: 448
@@ -727,7 +727,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_8
+      name: vampires3_death_with_shadow_2_8
       rect:
         serializedVersion: 2
         x: 512
@@ -748,7 +748,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_9
+      name: vampires3_death_with_shadow_2_9
       rect:
         serializedVersion: 2
         x: 576
@@ -769,7 +769,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_2_10
+      name: vampires3_death_with_shadow_2_10
       rect:
         serializedVersion: 2
         x: 640
@@ -790,7 +790,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_0
+      name: vampires3_death_with_shadow_3_0
       rect:
         serializedVersion: 2
         x: 0
@@ -811,7 +811,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_1
+      name: vampires3_death_with_shadow_3_1
       rect:
         serializedVersion: 2
         x: 64
@@ -832,7 +832,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_2
+      name: vampires3_death_with_shadow_3_2
       rect:
         serializedVersion: 2
         x: 128
@@ -853,7 +853,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_3
+      name: vampires3_death_with_shadow_3_3
       rect:
         serializedVersion: 2
         x: 192
@@ -874,7 +874,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_4
+      name: vampires3_death_with_shadow_3_4
       rect:
         serializedVersion: 2
         x: 256
@@ -895,7 +895,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_5
+      name: vampires3_death_with_shadow_3_5
       rect:
         serializedVersion: 2
         x: 320
@@ -916,7 +916,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_6
+      name: vampires3_death_with_shadow_3_6
       rect:
         serializedVersion: 2
         x: 384
@@ -937,7 +937,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_7
+      name: vampires3_death_with_shadow_3_7
       rect:
         serializedVersion: 2
         x: 448
@@ -958,7 +958,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_8
+      name: vampires3_death_with_shadow_3_8
       rect:
         serializedVersion: 2
         x: 512
@@ -979,7 +979,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_9
+      name: vampires3_death_with_shadow_3_9
       rect:
         serializedVersion: 2
         x: 576
@@ -1000,7 +1000,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Vampires3_Death_with_shadow_3_10
+      name: vampires3_death_with_shadow_3_10
       rect:
         serializedVersion: 2
         x: 640
@@ -1089,6 +1089,50 @@ TextureImporter:
       Vampires3_Death_with_shadow_7: -1839095242510114021
       Vampires3_Death_with_shadow_8: -373370571792227175
       Vampires3_Death_with_shadow_9: -808346112454106870
+      vampires3_death_with_shadow_0_0: 0
+      vampires3_death_with_shadow_0_1: 0
+      vampires3_death_with_shadow_0_10: 0
+      vampires3_death_with_shadow_0_2: 0
+      vampires3_death_with_shadow_0_3: 0
+      vampires3_death_with_shadow_0_4: 0
+      vampires3_death_with_shadow_0_5: 0
+      vampires3_death_with_shadow_0_6: 0
+      vampires3_death_with_shadow_0_7: 0
+      vampires3_death_with_shadow_0_8: 0
+      vampires3_death_with_shadow_0_9: 0
+      vampires3_death_with_shadow_1_0: 0
+      vampires3_death_with_shadow_1_1: 0
+      vampires3_death_with_shadow_1_10: 0
+      vampires3_death_with_shadow_1_2: 0
+      vampires3_death_with_shadow_1_3: 0
+      vampires3_death_with_shadow_1_4: 0
+      vampires3_death_with_shadow_1_5: 0
+      vampires3_death_with_shadow_1_6: 0
+      vampires3_death_with_shadow_1_7: 0
+      vampires3_death_with_shadow_1_8: 0
+      vampires3_death_with_shadow_1_9: 0
+      vampires3_death_with_shadow_2_0: 0
+      vampires3_death_with_shadow_2_1: 0
+      vampires3_death_with_shadow_2_10: 0
+      vampires3_death_with_shadow_2_2: 0
+      vampires3_death_with_shadow_2_3: 0
+      vampires3_death_with_shadow_2_4: 0
+      vampires3_death_with_shadow_2_5: 0
+      vampires3_death_with_shadow_2_6: 0
+      vampires3_death_with_shadow_2_7: 0
+      vampires3_death_with_shadow_2_8: 0
+      vampires3_death_with_shadow_2_9: 0
+      vampires3_death_with_shadow_3_0: 0
+      vampires3_death_with_shadow_3_1: 0
+      vampires3_death_with_shadow_3_10: 0
+      vampires3_death_with_shadow_3_2: 0
+      vampires3_death_with_shadow_3_3: 0
+      vampires3_death_with_shadow_3_4: 0
+      vampires3_death_with_shadow_3_5: 0
+      vampires3_death_with_shadow_3_6: 0
+      vampires3_death_with_shadow_3_7: 0
+      vampires3_death_with_shadow_3_8: 0
+      vampires3_death_with_shadow_3_9: 0
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
