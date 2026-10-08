@@ -15,7 +15,7 @@ namespace CryptWalker.HotUpdate.Entity.Common
         private FsmState<T> _current;
 
         /// <summary>当前状态（供外部查询，如 IsAttacking 判断）</summary>
-        public FsmState<T> Current => _current;
+        public FsmState<T> Current => _current;  
 
         /// <summary>切换到新状态：旧状态 OnExit → 新状态 OnEnter</summary>
         public void ChangeState(FsmState<T> next)
@@ -23,7 +23,7 @@ namespace CryptWalker.HotUpdate.Entity.Common
             if (next == null || next == _current) return;   // 防御：空或同状态跳过
             _current?.OnExit();
             _current = next;
-            _current.OnEnter();
+            _current.OnEnter(); 
         }
 
         /// <summary>每帧驱动当前状态（由实体的 Update 调用）</summary>

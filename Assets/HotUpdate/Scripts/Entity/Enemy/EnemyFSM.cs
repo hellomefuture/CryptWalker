@@ -51,6 +51,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         public IdleState(EnemyBase owner) : base(owner) { }
         public override void OnEnter()
         {
+            Owner.StopMove();      // 待机清速度
             Owner.PlayAction("Idle");
             _idleUntil = Time.time + 2f;
         }
@@ -84,13 +85,22 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
                 Owner.PlayAction("Walk");
             }
 
-            Vector3 to = _target - Owner.transform.position;
-            if (to.sqrMagnitude > 0.25f)
-                Owner.transform.position += to.normalized * (Owner.MoveSpeed * 0.5f * Time.deltaTime);
+            // 移动走刚体速度（碰墙会被挡）；巡逻半速
+            if ((_target - Owner.transform.position).sqrMagnitude > 0.25f)
+                Owner.MoveTowardPoint(_target, 0.5f);
             else
                 PickNewPoint();
         }
-        private void PickNewPoint() => _target = Owner.transform.position + (Vector3)(Random.insideUnitCircle * 3f);
+        /// <summary>
+        /// 选一个巡逻点：修复前用 Random.insideUnitCircle，随机点经常落在墙里，
+        /// 敌人会一路顶着墙走到 2 秒超时才换点。现在从可走格里随机挑。
+        /// </summary>
+        private void PickNewPoint()
+        {
+            if (!Owner.TryGetRandomPointNear(Owner.transform.position, 3f, out var p))
+                p = Owner.transform.position;   // 周围找不到可走格 → 原地待着（比撞墙好）
+            _target = p;
+        }
     }
 
     /// <summary>追击：播 Run，面朝目标并靠近；进攻击范围转 Attack，丢目标转 Patrol</summary>
@@ -115,7 +125,9 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
                 Owner.PlayAction("Run");
             }
             if (Owner.TargetInAttackRange()) { Owner.Fsm.ChangeToAttack(); return; }
-            Owner.MoveTowardTarget();
+            // 修复：改为 A* 寻路跟随（原先 MoveTowardTarget 是纯直线，撞墙就被卡住）
+            // EnemyBase.MoveAlongPath 内部三级策略：有视线直冲 → 有墙走 A* 路径 → 无网格退化直线
+            Owner.MoveAlongPath();
         }
     }
 
@@ -128,6 +140,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         public AttackState(EnemyBase owner) : base(owner) { }
         public override void OnEnter()
         {
+            Owner.StopMove();      // 攻击定身（清速度）
             Owner.LookAtTarget();
             _lastFacing = Owner.Facing;
             Owner.PlayAction("Attack");
@@ -145,8 +158,22 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
             // 到挥击帧且还没命中 → 造成伤害（只一次）
             if (_hitTime >= 0 && Time.time >= _hitTime)
             {
-                Owner.PerformAttack();
                 _hitTime = -1;
+
+                // 修复：策划 §3.2 蒸汽爆炸致盲（攻击 50% Miss）
+                if (Owner.IsBlinded && Random.value < 0.5f)
+                {
+                    Core.Log.Info($"[EnemyFSM] {Owner.name} 致盲 miss");
+                }
+                // 修复：策划 §3.2 过载爆发硬直（打断正在进行的攻击 → 走 Hit）
+                else if (Owner.IsStunned)
+                {
+                    Owner.Fsm.ChangeToHit();
+                }
+                else
+                {
+                    Owner.PerformAttack();
+                }
             }
             if (Time.time >= _attackEnd)
             {
@@ -163,6 +190,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         public HitState(EnemyBase owner) : base(owner) { }
         public override void OnEnter()
         {
+            Owner.StopMove();      // 受击硬直（清速度）
             Owner.PlayAction("Hurt");
             _hitEnd = Time.time + 0.3f;
         }
@@ -183,6 +211,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         public DeathState(EnemyBase owner) : base(owner) { }
         public override void OnEnter()
         {
+            Owner.StopMove();      // 死亡（清速度）
             Owner.PlayAction("Death");
             _destroyAt = Time.time + 2f;
         }

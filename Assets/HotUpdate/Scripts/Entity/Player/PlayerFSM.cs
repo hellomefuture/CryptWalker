@@ -50,6 +50,8 @@ namespace CryptWalker.HotUpdate.Entity.Player
         public IdleState(PlayerController owner) : base(owner) { }
         public override void OnEnter()
         {
+            // 修复：进 Idle 必须 StopMove 清速度（之前漏掉，从 Walk/Run 切回时速度残留 → 玩家滑行）
+            Owner.StopMove();
             Owner.PlayAction("Idle");
         }
         public override void OnUpdate()
@@ -118,7 +120,7 @@ namespace CryptWalker.HotUpdate.Entity.Player
         }
     }
 
-    /// <summary>攻击：播 Attack（定身），挥击帧命中，硬直结束后按输入回 Walk/Run/Idle</summary>
+    /// <summary>攻击：播 Attack（完全定身），挥击帧命中，硬直结束后按输入回 Walk/Run/Idle</summary>
     public class AttackState : FsmState<PlayerController>
     {
         private float _end;
@@ -126,6 +128,8 @@ namespace CryptWalker.HotUpdate.Entity.Player
         public AttackState(PlayerController owner) : base(owner) { }
         public override void OnEnter()
         {
+            // 修复：从 Walk/Run 进入 Attack 时清速度（之前漏调，进入攻击后滑动继续滑动）
+            Owner.StopMove();
             Owner.PlayAction("Attack");
             _hitTime = Time.time + Owner.AttackHitDelay;   // 命中延后到动画中段
             _end = Time.time + Owner.AttackLockDuration;
