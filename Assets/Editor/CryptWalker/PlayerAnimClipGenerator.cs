@@ -21,7 +21,7 @@ namespace CryptWalker.EditorTools
     /// </summary>
     public static class PlayerAnimClipGenerator
     {
-        private const string CharacterRoot = "Assets/Art/Character/Swordsman";
+        private const string CharacterRoot = "Assets/Art/Character/Player/Swordsman";
         private const string ClipRoot      = "Assets/Art/PlayerAnimator";
         private const string Menu          = "Tools/CryptWalker/生成玩家动画Clip";
 
@@ -129,11 +129,15 @@ namespace CryptWalker.EditorTools
                 string baseName = Path.GetFileNameWithoutExtension(texPath);
                 for (int r = 0; r < rows; r++)
                     for (int c = 0; c < cols; c++)
+                    {
+                        string spriteName = $"{baseName}_{r}_{c}";
                         metas.Add(new SpriteMetaData
                         {
-                            name = $"{baseName}_{r}_{c}",
-                            rect = new Rect(c * 64, r * 64, 64, 64)
+                            name = spriteName,
+                            rect = new Rect(c * 64, r * 64, 64, 64),
+                            // 2022.3 无 spriteID/internalID API —— Unity 导入时按名字自动分配稳定 ID
                         });
+                    }
                 ti.spritesheet = metas.ToArray();
                 changed = true;
             }

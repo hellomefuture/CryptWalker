@@ -44,6 +44,14 @@ namespace CryptWalker.EditorTools
                 var importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
                 if (importer == null) { warnings.Add($"{Path.GetFileName(assetPath)}: importer 为空"); continue; }
 
+                // 关键：先切到 Single 清空 spritesheet + nameFileIdTable（脏表会导致
+                // "Identifier uniqueness violation" 同名 sprite FileId 撞车），再重新切
+                if (importer.spriteImportMode != SpriteImportMode.Single)
+                {
+                    importer.spriteImportMode = SpriteImportMode.Single;
+                    importer.SaveAndReimport();
+                }
+
                 importer.isReadable = true;
                 importer.SaveAndReimport();      // 立即真正导入，纹理才可读
                 AssetDatabase.Refresh();
@@ -62,41 +70,36 @@ namespace CryptWalker.EditorTools
                 totalFrames += rects.Count;
             }
 
-            // ========== Pass 2：批量写入切片设置（在批量块内）==========
-            try
+            // ========== Pass 2：逐个写入切片设置 ==========
+            // ⚠️ 不能包在 StartAssetEditing 里（旧版 bug 根因）：批量块内 SaveAndReimport
+            // 被延迟，与 importer 状态变更合并成两次导入 → sprite 重复生成 → FileId 撞车。
+            // 玩家工具（PlayerAnimClipGenerator）一直是顺序导入，从未报错 —— 对齐它。
+            foreach (var kv in detected)
             {
-                AssetDatabase.StartAssetEditing();
-                foreach (var kv in detected)
-                {
-                    var importer = AssetImporter.GetAtPath(kv.Key) as TextureImporter;
-                    if (importer == null) continue;
+                var importer = AssetImporter.GetAtPath(kv.Key) as TextureImporter;
+                if (importer == null) continue;
 
-                    importer.textureType = TextureImporterType.Sprite;
-                    importer.spriteImportMode = SpriteImportMode.Multiple;
-                    importer.alphaIsTransparency = true;
-                    importer.alphaSource = TextureImporterAlphaSource.FromInput;
-                    importer.mipmapEnabled = false;
-                    importer.filterMode = FilterMode.Point;
-                    importer.wrapMode = TextureWrapMode.Clamp;
-                    importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Multiple;
+                importer.alphaIsTransparency = true;
+                importer.alphaSource = TextureImporterAlphaSource.FromInput;
+                importer.mipmapEnabled = false;
+                importer.filterMode = FilterMode.Point;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
 
-                    var settings = new TextureImporterSettings();
-                    importer.ReadTextureSettings(settings);
-                    settings.spritePixelsPerUnit = 64;
-                    settings.spriteMeshType = SpriteMeshType.FullRect;
-                    settings.spriteGenerateFallbackPhysicsShape = false;
-                    importer.SetTextureSettings(settings);
+                var settings = new TextureImporterSettings();
+                importer.ReadTextureSettings(settings);
+                settings.spritePixelsPerUnit = 16;   // 与地图 Tile 图集 PPU 一致（用户确认）
+                settings.spriteMeshType = SpriteMeshType.FullRect;
+                settings.spriteGenerateFallbackPhysicsShape = false;
+                importer.SetTextureSettings(settings);
 
-                    importer.spritesheet = kv.Value;
-                    importer.isReadable = false;   // 运行时不需要可读，省内存
-                    importer.SaveAndReimport();
-                }
+                importer.spritesheet = kv.Value;
+                importer.isReadable = false;   // 运行时不需要可读，省内存
+                importer.SaveAndReimport();   // 顺序导入：立即生效，不延迟
             }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
-            }
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+            AssetDatabase.Refresh();
 
             string msg = $"处理 {files.Length} 个图集，共切出 {totalFrames} 帧。" +
                          (warnings.Count > 0 ? $"\n\n警告 {warnings.Count} 条（需手动检查）：\n{string.Join("\n", warnings)}" : "\n全部自动切片成功");
@@ -123,12 +126,15 @@ namespace CryptWalker.EditorTools
                 {
                     var cell = new Rect(c * CELL, r * CELL, CELL, CELL);
                     if (IsCellEmpty(pixels, w, h, cell)) continue;   // 全透明格跳过
+                    string spriteName = $"{baseName}_{r}_{c}";
                     rects.Add(new SpriteMetaData
                     {
-                        name = $"{baseName}_{r}_{c}",
+                        name = spriteName,
                         rect = cell,
                         alignment = (int)SpriteAlignment.Center,
                         pivot = new Vector2(0.5f, 0.5f),
+                        // 2022.3 无 spriteID/internalID API，无需显式设置 ——
+                        // Unity 导入时会按名字自动分配稳定 ID（玩家图集同款做法，已验证可行）
                     });
                 }
             }
