@@ -19,6 +19,22 @@ namespace CryptWalker.HotUpdate.Core
         CoinChanged,      // 金币变化（payload: int）
         RoomEntered,      // 进入房间（payload: RoomData）
         GameOver,         // 本局结束
+
+        // —— UI 事件（AGENTS.md §5.3：按钮回调用 EventBus 解耦）——
+        // 约定：View（Panel）只负责 Raise，Controller（GameFlowMachine 状态）负责 Subscribe + 处理，
+        //       两者互不持有引用 → 面板可独立替换/复用。
+        MainMenuStartClicked,     // 主菜单「开始游戏」
+        MainMenuSettingClicked,   // 主菜单「游戏设置」
+        MainMenuQuitClicked,      // 主菜单「退出游戏」
+        SettleBackToMenuClicked,  // 结算「返回主菜单」
+
+        // —— 设置面板（View 只 Raise，关面板由 Controller 做，AGENTS.md §5.3）——
+        SettingSaveClicked,       // 设置面板「保存」
+        SettingCancelClicked,     // 设置面板「取消」
+        SettingContinueClicked,   // 设置面板「继续游戏」（关面板，保持当前流程）
+        SettingBackHomeClicked,   // 设置面板「返回主页面」（关面板并确保回到主菜单）
+        MusicVolumeChanged,       // 音乐音量变化（payload: float 0~1，留给后续 AudioService 消费）
+        MasterVolumeChanged,      // 主音量变化（payload: float 0~1）
     }
 
     /// <summary>

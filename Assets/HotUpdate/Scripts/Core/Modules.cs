@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CryptWalker.HotUpdate.Data;
+using CryptWalker.HotUpdate.Pool;
 
 namespace CryptWalker.HotUpdate.Core
 {
@@ -19,8 +20,12 @@ namespace CryptWalker.HotUpdate.Core
         // —— 模块实例（声明即注册，按依赖顺序排列：被依赖方在上）——
         // 配置模块：其他业务/模块 Init 时可能查配置，放最前
         public static readonly DataService Data = Register(DataService.Instance);
-        // public static PoolManager   Pool   = Register(new PoolManager());    // 第四步
-        // public static UIManager     UI     = Register(new UIManager());      // 以后
+        // 对象池（必须在 UI 和 Audio 之前——AGENTS.md 3.3 硬约束）
+        public static readonly PoolManager Pool = Register(new PoolManager());
+        // UI 服务（必须晚于 Pool —— UI 内部可能用到池）
+        public static readonly UI.UIService UI = Register(new UI.UIService());
+        // UI 面板管理器（必须晚于 UIService —— 开面板要按 UILayer 取对应的 Canvas 层）
+        public static readonly UI.UIManager UIManager = Register(new UI.UIManager());
         // public static AudioManager  Audio  = Register(new AudioManager());   // 以后
 
         /// <summary>

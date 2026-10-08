@@ -50,7 +50,14 @@ namespace CryptWalker.HotUpdate.Data
             string address = MakeAddress(resourceFolder, id);
             if (_cache.TryGetValue(address, out var cached)) return (T)cached;
 
-            T loaded = await CryptWalker.Main.Service.YooAssetService.LoadAssetAsync<T>(address);
+            // 修复：资源加载必须经 IAppBridge（AGENTS.md §3.1-2），不再直接引用 AOT 的 YooAssetService
+            if (GameRoot.Bridge == null)
+            {
+                Log.Error("[DataService] IAppBridge 未注入，无法加载配置（GameRoot.Run 是否已执行？）");
+                return null;
+            }
+
+            T loaded = await GameRoot.Bridge.LoadAssetAsync<T>(address);
             if (loaded == null)
             {
                 Log.Error($"[DataService] 加载配置失败: {address}");
@@ -81,14 +88,14 @@ namespace CryptWalker.HotUpdate.Data
         public void Evict(string address)
         {
             _cache.Remove(address);
-            CryptWalker.Main.Service.YooAssetService.ReleaseAsset(address);
+            GameRoot.Bridge?.ReleaseAsset(address);   // 经桥接释放，保持加载/卸载成对（§3.9-44）
         }
 
         /// <summary>清空所有缓存（热更后批量刷新）</summary>
         public void ClearAll()
         {
             foreach (var addr in new List<string>(_cache.Keys))
-                CryptWalker.Main.Service.YooAssetService.ReleaseAsset(addr);
+                GameRoot.Bridge?.ReleaseAsset(addr);
             _cache.Clear();
         }
     }
