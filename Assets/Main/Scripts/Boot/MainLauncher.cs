@@ -35,10 +35,15 @@ namespace CryptWalker.Main.Boot
         private IAppBridge _bridge;
         private Action _hotUpdateTick;
 
+        private void Awake()
+        {
+            // AppBridge 必须在所有其他 Start 之前创建，否则 LevelConfigHolder.Start() 拿不到 Instance
+            _bridge = new AppBridge(Application.persistentDataPath);
+        }
+
         private async void Start()
         {
             Debug.Log("[Main] CryptWalker 启动中 (AOT)");
-            _bridge = new AppBridge(Application.persistentDataPath);
 
             // 1) YooAsset 初始化 —— 开发期用编辑器模拟模式；失败不阻断热更链路
             try
@@ -75,10 +80,26 @@ namespace CryptWalker.Main.Boot
                 if (aotDlls.Length > 0)
                     HybridCLRHelper.EnsureAotRuntime(aotDlls);
 
-                // b) 获取并加载热更程序集字节（编辑器阶段走本地构建产物；正式走 YooAsset 下载）
-                string scriptAssemblies = Path.Combine(Application.dataPath, "..", "Library", "ScriptAssemblies");
-                byte[] hotDll = HotUpdateProvider.LoadHotUpdateDll(scriptAssemblies);
-                Assembly asm = HybridCLRHelper.LoadHotUpdateAssembly(hotDll);
+                // b) 获取热更程序集。
+                //    ⚠️ 必须先查 AppDomain 里有没有同名程序集，不能无脑 Assembly.Load(bytes)：
+                //      编辑器下 Assets/HotUpdate 是普通 asmdef，Unity 启动时就加载了它，
+                //      场景/Prefab 上的 EnemyBase、PlayerController 组件实例都属于【那一份】。
+                //      再 Assembly.Load 一份 → 出现两个同名程序集 → 两个不同的 EnemyBase Type →
+                //      热更侧 GetComponent<EnemyBase>() / FindObjectsOfType<EnemyBase>() 全部返回 null。
+                //      （真机走 else 分支：FilterHotFixAssemblies 已把热更程序集从包里剔除，不会重复）
+                //    详见 HybridCLRHelper.FindLoadedAssembly 的注释。
+                Assembly asm = HybridCLRHelper.FindLoadedAssembly(HybridCLRHelper.HotUpdateAssemblyName);
+                if (asm != null)
+                {
+                    Debug.Log($"[Main] 复用 Unity 已加载的热更程序集 {HybridCLRHelper.HotUpdateAssemblyName}（编辑器模式，避免双程序集类型不匹配）");
+                }
+                else
+                {
+                    string scriptAssemblies = Path.Combine(Application.dataPath, "..", "Library", "ScriptAssemblies");
+                    byte[] hotDll = HotUpdateProvider.LoadHotUpdateDll(scriptAssemblies);
+                    asm = HybridCLRHelper.LoadHotUpdateAssembly(hotDll);
+                    Debug.Log($"[Main] 已从 dll 字节加载热更程序集 {asm.GetName().Name}（真机 / 纯热更模式）");
+                }
 
                 // c) 反射调用入口 GameRoot.Run(bridge)
                 Type rootType = HybridCLRHelper.ResolveHotType(asm, HotAssemblyType);

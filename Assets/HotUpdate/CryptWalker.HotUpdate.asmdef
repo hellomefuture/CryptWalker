@@ -2,7 +2,8 @@
     "name": "CryptWalker.HotUpdate",
     "rootNamespace": "CryptWalker.HotUpdate",
     "references": [
-        "CryptWalker.Main.Runtime"
+        "CryptWalker.Main.Runtime",
+        "Cinemachine"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
