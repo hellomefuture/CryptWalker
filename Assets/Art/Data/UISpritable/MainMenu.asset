@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   panelId: MainMenu
   layer: 100
-  address: F:\Unity\UnityProject\CryptWalker\Assets\Art\Prefabs\UI_prefabs
+  address: 
   prefab: {fileID: 370902145240245125, guid: 63502affdcf3e15478a4a63b41c36559, type: 3}

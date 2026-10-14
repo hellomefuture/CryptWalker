@@ -38,13 +38,18 @@ namespace CryptWalker.HotUpdate.UI
         private readonly HashSet<string> _loading = new HashSet<string>();
         private readonly HashSet<string> _closedWhileLoading = new HashSet<string>();
 
+        // 是从 YooAsset address 加载（而非 prefab 直引用）的面板 —— 关闭时必须成对 Release，
+        // 否则每开一次面板就多占一份资源引用（AGENTS.md §3.9-44）。
+        private readonly HashSet<string> _openedFromAddress = new HashSet<string>();
+
         public void Init()
         {
             Instance = this;
             _configs.Clear();
             _opened.Clear();
-            _loading.Clear();
+            _loading.Clear();      
             _closedWhileLoading.Clear();
+            _openedFromAddress.Clear();
 
             var cfg = GameRoot.Bridge != null ? GameRoot.Bridge.GetUIConfig() : null;
             if (cfg == null)
@@ -88,6 +93,7 @@ namespace CryptWalker.HotUpdate.UI
             _configs.Clear();
             _loading.Clear();
             _closedWhileLoading.Clear();
+            _openedFromAddress.Clear();
             Instance = null;
         }
 
@@ -177,10 +183,14 @@ namespace CryptWalker.HotUpdate.UI
             }
 
             // 竞态：加载期间被要求关闭 → 丢弃刚实例化的对象
+            // 注意这里也要成对释放：引用是在上面加载成功时就已经占了的，
+            // 如果只 Destroy 物体而不 Release，就会永久多占一份（面板永远关不掉那份额度）。
             if (_closedWhileLoading.Remove(panelId))
             {
                 if (panel != null) UnityEngine.Object.Destroy(panel);
-                Log.Info($"[UIManager] 面板 {panelId} 加载完成时已被关闭，直接丢弃");
+                if (fromAddress && !string.IsNullOrEmpty(conf.address))
+                    GameRoot.Bridge?.ReleaseAsset(conf.address);
+                Log.Info($"[UIManager] 面板 {panelId} 加载完成时已被关闭，直接丢弃（已释放资源引用）");
                 return null;
             }
 
@@ -196,6 +206,7 @@ namespace CryptWalker.HotUpdate.UI
 
             panel.name = panelId;   // 覆盖 prefab 名 + "(Clone)" 后缀，避免场景里名字混乱
             _opened[panelId] = panel;
+            if (fromAddress) _openedFromAddress.Add(panelId);
             Log.Info($"[UIManager] 打开面板 {panelId}（层={conf.layer}，来源={(fromAddress ? "address" : "prefab")}）");
             return panel;
         }
@@ -209,6 +220,17 @@ namespace CryptWalker.HotUpdate.UI
             {
                 if (go != null) UnityEngine.Object.Destroy(go);
                 _opened.Remove(panelId);
+
+                // 成对释放：从 address 加载的面板关闭时必须 Release 一次（AGENTS.md §3.9-44）。
+                // 先 Destroy 再 Release —— 顺序反了可能在实例还活着时把 AssetBundle 卸掉，
+                // 导致"物体还在、贴图已经没了"。
+                if (_openedFromAddress.Remove(panelId)
+                    && _configs.TryGetValue(panelId, out var conf)
+                    && !string.IsNullOrEmpty(conf.address))
+                {
+                    GameRoot.Bridge?.ReleaseAsset(conf.address);
+                }
+
                 Log.Info($"[UIManager] 关闭面板 {panelId}");
             }
             else if (_loading.Contains(panelId))

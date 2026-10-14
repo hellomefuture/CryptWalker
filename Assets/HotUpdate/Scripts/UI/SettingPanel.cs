@@ -15,6 +15,8 @@ namespace CryptWalker.HotUpdate.UI
     ///   Button_Save            「保存」：应用设置 + 广播 SettingSaveClicked
     ///   Button_Decline         「取消」：回滚本次改动 + 广播 SettingCancelClicked
     ///   Button_Continue        「继续游戏」：应用 + 广播 SettingContinueClicked（关面板，保持当前流程）
+    ///   Button_Close           「关闭」(右上角 ×)：应用 + 广播 SettingContinueClicked
+    ///                          （与"继续游戏"同一条事件：都是关面板且当前流程不变）
     ///   Button_BackHome        「返回主页面」：应用 + 广播 SettingBackHomeClicked
     ///   Button_SureFullScreen  「全屏模式」：选中高亮 + 切全屏
     ///   Button_SureWindowMode  「窗口模式」：选中高亮 + 切窗口
@@ -34,6 +36,7 @@ namespace CryptWalker.HotUpdate.UI
         private const string BtnSave       = "Button_Save";
         private const string BtnDecline    = "Button_Decline";
         private const string BtnContinue   = "Button_Continue";
+        private const string BtnClose      = "Button_Close";
         private const string BtnBackHome   = "Button_BackHome";
         private const string BtnFullScreen = "Button_SureFullScreen";
         private const string BtnWindowMode = "Button_SureWindowMode";
@@ -118,6 +121,18 @@ namespace CryptWalker.HotUpdate.UI
             {
                 ApplyAudio();
                 EventBus.Raise(GameEvent.SettingContinueClicked);
+            });
+
+            // —— 关闭（右上角 ×，2026-10 美术新增）——
+            // 语义与「继续游戏」一致：应用当前设置 → 关面板 → 当前流程不变。
+            // 直接复用 SettingContinueClicked：Controller 侧对这两个入口要做的处理本来就一样，
+            // 没必要为"入口不同"多开一个事件。若以后想让关闭=不保存，
+            // 把这里换成 SettingCancelClicked 即可（取消逻辑已含回滚）。
+            BindButton(root, BtnClose, () =>
+            {
+                ApplyAudio();
+                EventBus.Raise(GameEvent.SettingContinueClicked);
+                Log.Info("[SettingPanel] 关闭设置面板（应用当前设置，保持当前流程）");
             });
 
             BindButton(root, BtnBackHome, () =>

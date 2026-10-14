@@ -105,11 +105,18 @@ namespace CryptWalker.HotUpdate.UI
 
             var scaler = go.AddComponent<UnityEngine.UI.CanvasScaler>();
             scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            // 修复：UI 美术稿设计空间是 4K（3840×2160），参考分辨率必须与之一致。
-            // 若设成 1920×1080，3840×2160 的面板会被放大 2 倍 → 屏幕只显示中间一块（UI 显示不全）。
-            scaler.referenceResolution = new Vector2(3840, 2160);
+            // 参考分辨率 / 匹配权重统一取 AOT 侧的 CryptWalker.Main.UI.UIDesign ——
+            // 加载界面（AOT 的 LoadingScreen）用的是同一份值。
+            //
+            // 以前两边各写字面量：这里改成了 4K（若设 1920×1080，3840×2160 的面板会被放大 2 倍，
+            // 屏幕只显示中间一块），但 LoadingScreen 漏改，于是加载界面又被放大 2 倍 ✗。
+            // 现在只有一个权威值，不会再漂移。
+            //
+            // 全限定名是故意的：本文件所在命名空间是 CryptWalker.HotUpdate.UI，
+            // 直接 using CryptWalker.Main.UI 会让两个 UI 命名空间里的类型名产生歧义风险。
+            scaler.referenceResolution = CryptWalker.Main.UI.UIDesign.ReferenceResolution;
             scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            scaler.matchWidthOrHeight = CryptWalker.Main.UI.UIDesign.MatchWidthOrHeight;
             go.AddComponent<UnityEngine.UI.GraphicRaycaster>();
             return canvas;
         }
@@ -131,10 +138,13 @@ namespace CryptWalker.HotUpdate.UI
         /// UIService 只保留【渲染基础设施】职责（4 层 Canvas + UI 相机 + 层级查询）。
         /// </summary>
 
-        /// <summary>显示 HUD（血条/经验条/武器栏/遗物栏）</summary>
+        /// <summary>
+        /// 显示 HUD（血条 / 体力 / 魔法 / 金币）。
+        /// 面板开关走 UIManager（AGENTS.md §5.3），HUD 用美术 prefab（不再是代码画的色块）。
+        /// </summary>
         public void ShowHUD()
         {
-            HUDPanel.Show(GetLayerRoot(UILayer.HUD));
+            _ = HUDPanel.ShowAsync();
         }
 
         public void CloseHUD()
