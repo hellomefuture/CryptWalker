@@ -10,7 +10,7 @@ namespace CryptWalker.HotUpdate.Core
     /// </summary>
     public enum GameEvent
     {
-        PlayerDamaged,    // 玩家受伤（payload: DamageInfo）
+        PlayerDamaged,    // 玩家受伤（payload: float 当前 HP 占比 0~1 —— HUD 血条只需要占比）
         PlayerDied,       // 玩家死亡
         EnemyDied,        // 敌人死亡（payload: 敌人实例）
         LevelUp,          // 玩家升级
@@ -20,6 +20,11 @@ namespace CryptWalker.HotUpdate.Core
         RoomEntered,      // 进入房间（payload: RoomData）
         GameOver,         // 本局结束
 
+        // —— 局内资源（HUD 三条条：红=HP / 绿=体力 / 蓝=魔法）——
+        // 约定：payload 一律是 float 占比 0~1，HUD 直接塞进 Slider.value，不用再算。
+        StaminaChanged,   // 体力变化（payload: float 0~1）
+        ManaChanged,      // 魔法变化（payload: float 0~1）
+
         // —— UI 事件（AGENTS.md §5.3：按钮回调用 EventBus 解耦）——
         // 约定：View（Panel）只负责 Raise，Controller（GameFlowMachine 状态）负责 Subscribe + 处理，
         //       两者互不持有引用 → 面板可独立替换/复用。
@@ -27,6 +32,9 @@ namespace CryptWalker.HotUpdate.Core
         MainMenuSettingClicked,   // 主菜单「游戏设置」
         MainMenuQuitClicked,      // 主菜单「退出游戏」
         SettleBackToMenuClicked,  // 结算「返回主菜单」
+        // 选武器面板（ChooseWeapon）点了某个槽位。
+        // payload: int 槽位索引 ✓ —— View 只 Raise ✓ 由 GameState（Controller）负责真正切武器 ✓
+        WeaponSlotClicked,
 
         // —— 设置面板（View 只 Raise，关面板由 Controller 做，AGENTS.md §5.3）——
         SettingSaveClicked,       // 设置面板「保存」

@@ -26,6 +26,8 @@ namespace CryptWalker.HotUpdate.Core
         public static readonly UI.UIService UI = Register(new UI.UIService());
         // UI 面板管理器（必须晚于 UIService —— 开面板要按 UILayer 取对应的 Canvas 层）
         public static readonly UI.UIManager UIManager = Register(new UI.UIManager());
+        // 局内钱包（订阅 EnemyDied → 加金币 → 广播 CoinChanged；与 UI 无依赖，放最后）
+        public static readonly GameFlow.RunWallet Wallet = Register(new GameFlow.RunWallet());
         // public static AudioManager  Audio  = Register(new AudioManager());   // 以后
 
         /// <summary>
