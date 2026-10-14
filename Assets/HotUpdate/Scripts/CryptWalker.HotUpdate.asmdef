@@ -3,7 +3,8 @@
     "rootNamespace": "CryptWalker.HotUpdate",
     "references": [
         "CryptWalker.Main.Runtime",
-        "Cinemachine"
+        "Cinemachine",
+        "AstarPathfindingProject"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

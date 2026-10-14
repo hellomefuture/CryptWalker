@@ -50,7 +50,7 @@ namespace CryptWalker.Main.Boot
                     config = UnityEditor.AssetDatabase.LoadAssetAtPath<UIConfig>(path);
                 }
             }
-        }
 #endif
+        }
     }
 }

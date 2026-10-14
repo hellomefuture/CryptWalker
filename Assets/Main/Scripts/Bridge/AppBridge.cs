@@ -111,12 +111,32 @@ namespace CryptWalker.Main
             }
         }
 
+        public bool AttachAsset(string address)
+        {
+            if (string.IsNullOrEmpty(address)) return false;
+            return YooAssetService.Attach(address);
+        }
+
         public void ReleaseAsset(string address)
         {
             if (string.IsNullOrEmpty(address)) return;
+            // 两套缓存各自按引用计数释放；address 只会命中其中一个，另一个是 no-op
             YooAssetService.ReleaseAsset(address);
-            // 预制体走的是独立句柄缓存，一并释放，保证"加载/卸载成对"
             YooAssetService.ReleasePrefab(address);
         }
+
+        // ===================================================================
+        // 加载界面：转发到 AOT 侧的 LoadingScreen
+        // 热更侧不直接引用它，保持"热更只认 IAppBridge"的分层。
+        // ===================================================================
+
+        public void ShowLoading(float progress = 0f)
+            => CryptWalker.Main.UI.LoadingScreen.Show(progress);
+
+        public void SetLoadingProgress(float progress)
+            => CryptWalker.Main.UI.LoadingScreen.SetProgress(progress);
+
+        public void HideLoading()
+            => CryptWalker.Main.UI.LoadingScreen.Hide();
     }
 }

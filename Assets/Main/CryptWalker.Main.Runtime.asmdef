@@ -3,7 +3,8 @@
     "rootNamespace": "CryptWalker.Main",
     "references": [
         "YooAsset",
-        "HybridCLR.Runtime"
+        "HybridCLR.Runtime",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

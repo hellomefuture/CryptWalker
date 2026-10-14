@@ -1,5 +1,121 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &828931579472470211
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8370591593199405893}
+  - component: {fileID: 7254838614338412646}
+  m_Layer: 0
+  m_Name: WeaponSprite
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8370591593199405893
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 828931579472470211}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7445671260476143122}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &7254838614338412646
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 828931579472470211}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: -889770619
+  m_SortingLayer: 2
+  m_SortingOrder: 9232
+  m_Sprite: {fileID: 21300000, guid: 8f1c9707fedb5bb4499d8a2071e9abae, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
+--- !u!1 &1315993487206920434
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7445671260476143122}
+  m_Layer: 0
+  m_Name: WeaponPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7445671260476143122
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1315993487206920434}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.014, y: -0.446, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8370591593199405893}
+  m_Father: {fileID: 4234365890258555773}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1635846707614132642
 GameObject:
   m_ObjectHideFlags: 0
@@ -11,9 +127,10 @@ GameObject:
   - component: {fileID: 4234365890258555773}
   - component: {fileID: 4202843963875960448}
   - component: {fileID: 7507574477964479221}
-  - component: {fileID: 6713684896833563988}
   - component: {fileID: -731510149809597369}
   - component: {fileID: -7133117684295842183}
+  - component: {fileID: 2013674104014771193}
+  - component: {fileID: 1183936529722275928}
   m_Layer: 8
   m_Name: player
   m_TagString: Player
@@ -35,6 +152,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2737676987704756743}
+  - {fileID: 7445671260476143122}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &4202843963875960448
@@ -78,7 +196,7 @@ SpriteRenderer:
   m_SortingLayerID: -889770619
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_Sprite: {fileID: 1757747706, guid: 721a71931f9fd6a4198ef799c5ceae1c, type: 3}
+  m_Sprite: {fileID: -8817648211113046718, guid: b3814e9da621443459b45160606616f3, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -110,30 +228,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &6713684896833563988
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1635846707614132642}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed7a6a29bf71d934687b13736ad29f2b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  characterName: Swordsman
-  moveSpeed: 5
-  runSpeed: 8
-  attackLockDuration: 0.5
-  attackRange: 1.58
-  attackWidth: 2.05
-  attackDamage: 25
-  attackHitDelay: 0.2
-  maxHp: 100
-  currentWeapon: {fileID: 0}
-  firePoint: {fileID: 0}
-  switchStiffDuration: 0.3
 --- !u!50 &-731510149809597369
 Rigidbody2D:
   serializedVersion: 4
@@ -196,6 +290,37 @@ CapsuleCollider2D:
   m_Offset: {x: -0.03, y: 0}
   m_Size: {x: 1.18, y: 1.84}
   m_Direction: 0
+--- !u!114 &2013674104014771193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1635846707614132642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2784bf02a3bbac64cb7f0024feee7096, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: 4856f1c2f56a6c8499132927724fb6ae, type: 2}
+  firePoint: {fileID: 0}
+  weaponPivot: {fileID: 7445671260476143122}
+  weaponRenderer: {fileID: 7254838614338412646}
+--- !u!114 &1183936529722275928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1635846707614132642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64a2f86d46a62334da10323a888ae6d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hotTypeFullName: CryptWalker.HotUpdate.Combat.MeleeWeapon
+  config: {fileID: 11400000, guid: 1f074553f38c63e42b1e2cb216581b21, type: 2}
+  firePoint: {fileID: 0}
 --- !u!1 &5450252936767077418
 GameObject:
   m_ObjectHideFlags: 0

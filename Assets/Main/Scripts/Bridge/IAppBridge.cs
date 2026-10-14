@@ -47,8 +47,37 @@ namespace CryptWalker.Main
         /// <summary>异步实例化预制体（按 address）。失败返回 null。句柄同样需 ReleaseAsset(address) 释放。</summary>
         System.Threading.Tasks.Task<UnityEngine.GameObject> InstantiateAsync(string address, UnityEngine.Transform parent = null);
 
-        /// <summary>释放 address 对应的资源句柄（与 LoadAssetAsync / InstantiateAsync 成对）</summary>
+        /// <summary>
+        /// 为已加载的 address 追加一份引用（不重复加载）。返回 false = 该地址当前没被加载。
+        /// 用于资源被多处共享时，让"几处使用就几处 Release"能对上。
+        /// </summary>
+        bool AttachAsset(string address);
+
+        /// <summary>
+        /// 释放 address 的一份引用（与 LoadAssetAsync / InstantiateAsync / AttachAsset 成对）。
+        /// 引用计数归零才会真正释放底层句柄 —— 所以多释放一次不会误伤别人，但也别忘记释放。
+        /// </summary>
         void ReleaseAsset(string address);
+
+        // ===================================================================
+        // 加载界面（AOT 侧实现；热更侧在切场景 / 生成长耗时内容时驱动）
+        //
+        // 为什么它必须走桥接、且实现在 AOT：
+        //   加载界面要在【热更 dll 加载之前】就能显示出来（否则"加载界面自己还没加载出来"），
+        //   所以它天然属于 AOT；热更侧只能通过本接口驱动它。
+        // ===================================================================
+
+        /// <summary>显示加载界面。progress 是初始进度 0~1。</summary>
+        void ShowLoading(float progress = 0f);
+
+        /// <summary>
+        /// 更新加载进度（0~1）。会顺带保证界面可见（进度来了就该显示）。
+        /// 提示文案由 AOT 侧按间隔自动轮播，热更侧不用管。
+        /// </summary>
+        void SetLoadingProgress(float progress);
+
+        /// <summary>隐藏加载界面（淡出）。</summary>
+        void HideLoading();
     }
 
     public enum LogLevel

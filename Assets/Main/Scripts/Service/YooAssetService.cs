@@ -55,6 +55,39 @@ namespace CryptWalker.Main.Service
         private static readonly Dictionary<string, SceneHandle> s_sceneHandleCache
             = new Dictionary<string, SceneHandle>();
 
+        // —— 引用计数（AGENTS.md §3.9-44「资源加载/卸载必须成对，避免引用计数泄漏」）——
+        //
+        // 为什么必须自己数：YooAsset 原生 handle.Release() 不区分"我自己的释放"和"共享的释放"。
+        // 两处业务加载同一 address 时，先结束的那处一 Release 就把句柄销毁了 → 另一处立刻空引用。
+        // 加上引用计数后，"几处 Load 就几处 Release"，只有归零才真正释放底层句柄。
+        //
+        // 注意：按 address 计数。YooAsset 内部还会自行对 AssetBundle 计数，
+        // 所以"不同 address 恰好同包"的情况是安全的（不会因为释放 A 而弄坏 B）。
+        private static readonly Dictionary<string, int> s_assetRefCount
+            = new Dictionary<string, int>();
+        private static readonly Dictionary<string, int> s_prefabRefCount
+            = new Dictionary<string, int>();
+
+        private static void AddRef(Dictionary<string, int> table, string address)
+        {
+            table.TryGetValue(address, out int count);
+            table[address] = count + 1;
+        }
+
+        /// <summary>减一次引用。返回 true 表示归零、调用方应当真正释放句柄。</summary>
+        private static bool DropRef(Dictionary<string, int> table, string address)
+        {
+            if (!table.TryGetValue(address, out int count)) return false;
+            count--;
+            if (count > 0)
+            {
+                table[address] = count;
+                return false;
+            }
+            table.Remove(address);
+            return true;
+        }
+
         // —— 对外只读状态 ——
         public static bool IsAvailable => _initialized && _package != null;
         public static EPlayMode CurrentMode => _currentMode;
@@ -152,7 +185,10 @@ namespace CryptWalker.Main.Service
                 throw new InvalidOperationException("[YooAssetService] 未初始化或不可用");
 
             if (s_assetHandleCache.TryGetValue(address, out var cached) && cached.IsValid)
+            {
+                AddRef(s_assetRefCount, address);   // 命中缓存 = 又一处使用者，引用 +1（调用方之后要 Release 一次）
                 return cached.AssetObject as T;
+            }
 
             AssetHandle handle = _package.LoadAssetAsync<T>(address);  // 2.3.16 仍保留 .Task
             await handle.Task;
@@ -162,17 +198,44 @@ namespace CryptWalker.Main.Service
                 return null;
             }
             s_assetHandleCache[address] = handle;
+            AddRef(s_assetRefCount, address);
             return handle.AssetObject as T;
         }
 
-        /// <summary>释放单资源句柄缓存</summary>
+        /// <summary>释放一份资源引用（与 LoadAssetAsync / Attach 成对）。只有引用归零才真正销毁句柄。</summary>
         public static void ReleaseAsset(string address)
         {
+            if (!DropRef(s_assetRefCount, address)) return;
+
             if (s_assetHandleCache.TryGetValue(address, out var h))
             {
                 h.Release();
                 s_assetHandleCache.Remove(address);
             }
+        }
+
+        /// <summary>
+        /// 为已加载的资源再取一份引用（不重复加载），交给另一处使用者。
+        /// 返回 false = 该 address 当前没被加载（调用方应先 LoadAssetAsync）。
+        /// 用途：资源被多处共享时，让"几处使用就几处 Release"能对上，
+        ///       避免第一处用完整理性地把别人还在用的资源释放掉。
+        /// </summary>
+        public static bool Attach(string address)
+        {
+            if (string.IsNullOrEmpty(address)) return false;
+
+            // 同 address 只会落在其中一个缓存里（取决于用的是 Load 还是 Instantiate）
+            if (s_prefabHandleCache.TryGetValue(address, out var prefab) && prefab.IsValid)
+            {
+                AddRef(s_prefabRefCount, address);
+                return true;
+            }
+            if (s_assetHandleCache.TryGetValue(address, out var asset) && asset.IsValid)
+            {
+                AddRef(s_assetRefCount, address);
+                return true;
+            }
+            return false;
         }
 
         // ===================================================================
@@ -250,9 +313,13 @@ namespace CryptWalker.Main.Service
         {
             if (!IsAvailable) return null;
 
-            // 命中缓存：句柄仍有效则直接再实例化一份，不重复加载也不重复占引用计数
+            // 命中缓存：句柄仍有效则直接再实例化一份（不重复加载），但仍要计一份引用 ——
+            // 每个实例都算一处使用者，各自的 ReleasePrefab 要能对上
             if (s_prefabHandleCache.TryGetValue(address, out var cached) && cached.IsValid)
+            {
+                AddRef(s_prefabRefCount, address);
                 return cached.InstantiateSync(parent);
+            }
 
             AssetHandle handle = _package.LoadAssetAsync<GameObject>(address);
             await handle.Task;
@@ -264,13 +331,22 @@ namespace CryptWalker.Main.Service
             }
             // 修复：缓存句柄，交给 ReleasePrefab(address) 成对释放（AGENTS.md §3.9-44）
             s_prefabHandleCache[address] = handle;
+            AddRef(s_prefabRefCount, address);
             // 2.3.16 提供 handle.InstantiateSync(parent)，避免 new InstantiateOperation
             return handle.InstantiateSync(parent);
         }
 
-        /// <summary>释放预制体句柄（与 InstantiateAsync 成对调用）</summary>
+        /// <summary>
+        /// 释放一份预制体引用（与 InstantiateAsync 成对）：引用归零才真正释放句柄。
+        ///
+        /// ⚠️ 调用时机：应当在【实例已经销毁之后】再释放。
+        /// 句柄归零会让 YooAsset 卸载对应的 AssetBundle，而实例可能还共享着包里的图集/贴图；
+        /// 先销毁实例再释放，可以避免"物体还在、贴图已经没了"的画面缺失。
+        /// </summary>
         public static void ReleasePrefab(string address)
         {
+            if (!DropRef(s_prefabRefCount, address)) return;
+
             if (s_prefabHandleCache.TryGetValue(address, out var h))
             {
                 h.Release();
@@ -359,6 +435,8 @@ namespace CryptWalker.Main.Service
             s_rawHandleCache.Clear();
             s_prefabHandleCache.Clear();
             s_sceneHandleCache.Clear();
+            s_assetRefCount.Clear();
+            s_prefabRefCount.Clear();
             Debug.Log("[YooAssetService] 句柄缓存已清空");
         }
 
