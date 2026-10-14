@@ -13,12 +13,30 @@ namespace CryptWalker.HotUpdate.Combat
     ///   PlayerController 触发 → WeaponBase.DoAttack(dir) → 武器类型决定效果
     ///   命中判定 → DamageCalculator.Calc → 应用伤害 + 元素印记
     /// </summary>
-    public abstract class WeaponBase : MonoBehaviour
+    public abstract class WeaponBase : MonoBehaviour, CryptWalker.Main.Bridge.IHotTunable
     {
         [SerializeField] protected WeaponConfig config;     // 数据源（策划案 §3.1 JSON 字段）
         [SerializeField] protected Transform firePoint;      // 弹道/特效发出点（玩家手部/枪口）
 
         public WeaponConfig Config => config;
+
+        /// <summary>
+        /// 注入武器配置（由 AOT 侧的 WeaponProxy 在运行时调用 ✗）。
+        ///
+        /// 为什么武器也要走注入 ✗：武器组件原来直接挂在 player.prefab 上 ✗
+        /// → 真机包里脚本引用失效（missing script ✗，实测 2 条 ✓）
+        /// → 改由 AOT 的 WeaponProxy 运行时创建 ✓，所以 config / firePoint
+        ///   这两个原本靠 prefab 序列化的字段 ✗ 现在由这里填 ✓
+        ///
+        /// 比另外两个组件省事的地方 ✓：本类【没有 Awake】✗
+        /// → 不存在"Awake 先读了旧值"的坑 ✓（对比 EnemyBase / PlayerController ✓）
+        /// </summary>
+        public void ApplyTuning(object tuning)
+        {
+            if (!(tuning is CryptWalker.Main.Bridge.WeaponTuning t)) return;
+            config = t.config;
+            if (t.firePoint != null) firePoint = t.firePoint;
+        }
         public float BaseAttack => config != null ? config.baseAttack : 0f;
         public float WeaponMultiplier => GetWeaponMultiplier();    // 武器倍率（策划案 §3.3）
         public EWeaponType WeaponType => config != null ? config.weaponType : EWeaponType.Melee;
@@ -26,6 +44,9 @@ namespace CryptWalker.HotUpdate.Combat
         public float AttackRange => config != null ? config.range : 1.5f;
         public float AttackSpeed => config != null ? config.attackSpeed : 1f;
         public float SpecialSkillCD => config != null ? config.specialSkillCD : 6f;
+
+        /// <summary>手持武器贴图（元气骑士式独立显示用，由 PlayerController 挂到 WeaponPivot 上）</summary>
+        public Sprite WeaponSprite => config != null ? config.weaponSprite : null;
 
         /// <summary>
         /// 策划案 §3.3 武器倍率表：
