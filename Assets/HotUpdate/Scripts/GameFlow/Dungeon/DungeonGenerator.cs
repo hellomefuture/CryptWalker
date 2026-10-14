@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using CryptWalker.Main.Data;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -27,8 +28,16 @@ namespace CryptWalker.HotUpdate.GameFlow.Dungeon
     {
         /// <summary>
         /// 主入口：生成整个关卡，返回 Start 房数据。
+        ///
+        /// ⚠️ 【分帧生成】整个地牢（11 间房 + 走廊 + NavGrid + 敌人）一口气做完会卡住主线程几百毫秒。
+        /// 所以每画完一间房 / 一段走廊 / 一房的敌人就让出一帧（Task.Yield），把开销摊到几十帧。
+        ///
+        /// 让出期间玩家可能按 ESC 退回主菜单（GameState.OnExit → DestroyDungeonRoot），
+        /// 所以每次让出后都必须确认根节点还活着 —— 否则会往已销毁的父节点下继续创建物体，
+        /// 那些物体会掉到场景根、永远没人回收（和之前修过的"每局泄漏一整套地牢"是同一类 bug）。
         /// </summary>
-        public static RoomData Generate(Transform parent, LevelConfig config)
+        public static async Task<RoomData> GenerateAsync(Transform parent, LevelConfig config,
+            System.Action<float> onProgress = null)
         {
             if (config == null)
             {
@@ -40,6 +49,10 @@ namespace CryptWalker.HotUpdate.GameFlow.Dungeon
                 Debug.LogError("[DungeonGenerator] LevelConfig.roomTileset 缺少 Floor / Wall 资源，无法生成关卡");
                 return null;
             }
+
+            // 进度回调（给加载界面用）。没传就什么都不做。
+            // 各阶段大致权重：布点 0.15 → 画房间 0.15~0.45 → 走廊 0.6 → NavGrid 0.7 → A* 扫图 0.9 → 刷怪 0.98
+            void Report(float p) => onProgress?.Invoke(Mathf.Clamp01(p));
 
             var rnd = new System.Random(config.seed);
             int gridSize = config.gridSize;
@@ -115,9 +128,16 @@ namespace CryptWalker.HotUpdate.GameFlow.Dungeon
                 }
             }
 
-            // 6. 绘制所有房间
+            // 6. 绘制所有房间（每画完一间让出一帧 —— SetTilesBlock + RefreshAllTiles + collider 重建都在这里）
+            //    这一段是总耗时的大头，所以逐间报进度，加载条才不会卡住不动。
+            int drawnRooms = 0;
             foreach (var r in placed)
+            {
                 DrawRoom(r, tileFloor, tileWall);
+                Report(0.15f + 0.30f * (++drawnRooms) / Mathf.Max(1, placed.Count));
+                await Task.Yield();
+                if (Aborted(dungeonRoot)) return null;
+            }
 
             // 7. 绘制所有走廊（去重：每对相邻 cell 只画一次）
             var drawnCorridors = new HashSet<(Vector2Int, Vector2Int)>();
@@ -134,23 +154,54 @@ namespace CryptWalker.HotUpdate.GameFlow.Dungeon
                         tileFloor, tileWall, config.corridorWidth,
                         config.roomWidth, config.roomHeight);
                     corridorCount++;
+
+                    await Task.Yield();
+                    if (Aborted(dungeonRoot)) return null;
                 }
             }
 
             // 7.5 构建可走性网格（供敌人 A* 寻路）——必须在【所有房间 + 走廊都画完】之后，
             //     因为门洞是"先把边缘铺满墙、再把门洞那几格 SetTile(null) 挖掉"挖出来的，
             //     画到一半去扫会得到错误的墙分布。
-            var navGrid = BuildNavGrid(dungeonRoot);
+            Report(0.60f);   // 房间 + 走廊画完
+
+            await Task.Yield();
+            if (Aborted(dungeonRoot)) return null;
+            var navGrid = BuildNavGrid(dungeonRoot);   // 全图扫描，单独占一帧
+            Report(0.70f);
+
+            // 7.6 建 A* 插件（A* Pathfinding Project）的图并扫描。
+            //     时机要求：必须【所有墙 + 走廊都画完】之后 —— 门洞是"先铺满墙、再把那几格挖掉"
+            //     挖出来的，画到一半去扫会把门洞当墙，房间之间就不通了。
+            //     这里扫描时玩家和敌人都还没刷，所以碰撞掩码只留 Default 层就很干净。
+            //     与 NavGrid 并存分工：NavGrid 管"有视线就直冲"和连通性自检，
+            //     插件管真正的寻路（EnemyBase.Repath 里调）。
+            await AI.AstarPathService.ScanAsync(ComputeWorldBounds(placed, config), navGrid);
+            if (Aborted(dungeonRoot)) return null;
+            // A* 扫图是主线程一次做几十~几百毫秒的活（实测 ~230ms），
+            // 把它放在 0.7→0.9 之间，加载条正好"卡在 70% 一小会"，不会看起来像死机。
+            Report(0.90f);
 
             // 8. 先刷玩家（Start 房中心），再刷敌人（敌人需要 Target 引用）
+            await Task.Yield();
+            if (Aborted(dungeonRoot)) return null;
             var playerTransform = SpawnPlayer(start, parent, config);
 
-            // 9. 刷敌人（Combat 房中心），并注入 Target = player.transform
+            // 9. 刷敌人（Combat 房中心），并注入 Target = player.transform（每房一帧）
             foreach (var r in placed)
-                if (r.Type == RoomType.Combat)
-                    SpawnEnemies(r, parent, config, playerTransform, navGrid);
+            {
+                if (r.Type != RoomType.Combat) continue;
+                SpawnEnemies(r, parent, config, playerTransform, navGrid);
+                await Task.Yield();
+                if (Aborted(dungeonRoot)) return null;
+            }
+
+            Report(0.98f);   // 怪刷完，剩下的是自检
 
             // 兜底：场景里所有 EnemyBase 兜底注入 Target / NavGrid（防止个别敌人漏注入）
+            // FindObjectsOfType 是全场景扫描，单独占一帧
+            await Task.Yield();
+            if (Aborted(dungeonRoot)) return null;
             if (playerTransform != null)
             {
                 var allEnemies = Object.FindObjectsOfType<CryptWalker.HotUpdate.Entity.Enemy.EnemyBase>();
@@ -164,6 +215,9 @@ namespace CryptWalker.HotUpdate.GameFlow.Dungeon
 
             // 连通性自检：从 Start 房中心出发能走到的格子数应等于全部可走格。
             // 不相等 = 有房间成了孤岛（门洞/走廊几何有缺口），A* 必然找不到路 → 这里直接报出来。
+            // （BFS 扫全图，也让它单独占一帧）
+            await Task.Yield();
+            if (Aborted(dungeonRoot)) return null;
             if (navGrid != null && playerTransform != null)
             {
                 var startCell = CryptWalker.HotUpdate.AI.NavGrid.WorldToCell(playerTransform.position);
@@ -176,7 +230,35 @@ namespace CryptWalker.HotUpdate.GameFlow.Dungeon
             }
 
             Debug.Log($"[DungeonGenerator] 关卡生成完成：{placed.Count} 间房 + {corridorCount} 段走廊（grid={gridSize}×{gridSize}, seed={config.seed}）");
+            Report(1f);
             return new RoomData { Type = RoomType.Start, Room = start };
+        }
+
+        /// <summary>
+        /// 分帧生成中每次让出一帧后调用：地牢根节点是不是已经没了（玩家中途退出战斗）。
+        /// Unity 的假 null 语义正好适用 —— 被 Destroy 的对象用 == null 判定为 true。
+        /// </summary>
+        private static bool Aborted(GameObject dungeonRoot) => dungeonRoot == null;
+
+        /// <summary>
+        /// 所有房间（含走廊外扩）的世界包围盒 —— 给 A* 的 GridGraph 定尺寸和中心用。
+        /// 房间格子是画在本地 (0,0)~(w,h) 上的（见 DrawRoom），所以世界范围就是
+        /// WorldPos ~ WorldPos + (Width, Height)；走廊落在两间房之间，外扩一个走廊宽就盖住了。
+        /// </summary>
+        private static Bounds ComputeWorldBounds(List<GridRoom> placed, LevelConfig config)
+        {
+            var min = new Vector3(float.MaxValue, float.MaxValue, 0f);
+            var max = new Vector3(float.MinValue, float.MinValue, 0f);
+            foreach (var r in placed)
+            {
+                min = Vector3.Min(min, r.WorldPos);
+                max = Vector3.Max(max, r.WorldPos + new Vector3(r.Width, r.Height, 0f));
+            }
+
+            float pad = config.corridorWidth;
+            min -= new Vector3(pad, pad, 0f);
+            max += new Vector3(pad, pad, 0f);
+            return new Bounds((min + max) * 0.5f, max - min);
         }
 
         // ================ 房间创建 ================

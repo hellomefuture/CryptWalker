@@ -189,6 +189,10 @@ namespace CryptWalker.HotUpdate.GameFlow
 
             public override void OnUpdate()
             {
+                // 开始界面动态效果：按鼠标位置刷新分层视差
+                // （这里驱动而不是面板里写 MonoBehaviour，是为了走项目统一的 tick 链路，AGENTS.md §3.2-8）
+                MainMenuPanel.TickParallax();
+
                 // 兼容旧键盘输入（开发期，按 1 进入战斗）
                 if (Input.GetKeyDown(KeyCode.Alpha1))
                 {
@@ -214,23 +218,49 @@ namespace CryptWalker.HotUpdate.GameFlow
                 EventBus.Unsubscribe(GameEvent.SettingBackHomeClicked, OnSettingBackHome);
                 UIManager.Instance?.ClosePanel(MainMenuPanel.PanelId);
                 UIManager.Instance?.ClosePanel(SettingPanel.PanelId);   // 设置面板可能还开着
+
+                // 面板马上被销毁：清掉视差缓存，别继续持有已销毁的 Transform
+                MainMenuPanel.ClearParallax();
             }
         }
 
-        /// <summary>战斗态：开发期占位（按 ESC 返回菜单）</summary>
+        /// <summary>
+        /// 战斗态。ESC = 暂停菜单（打开设置面板），不再直接退回主菜单；
+        /// 退出战斗的唯一入口是设置面板里的「返回主页面」（Button_BackHome）。
+        /// </summary>
         public class GameState : FlowState
         {
             private float _elapsed;
+
+            /// <summary>异步开面板期间挡重复请求（否则连按 ESC 会重复请求/刷警告）</summary>
+            private bool _settingOpening;
 
             public GameState(GameFlowMachine owner) : base(owner) { }
 
             public override void OnEnter()
             {
                 _elapsed = 0f;
-                Log.Info("[GameFlow] 进入战斗场景 | 按 [ESC] 强制退出到主菜单");
+                _settingOpening = false;
+                Log.Info("[GameFlow] 进入战斗场景 | 按 [ESC] 打开设置面板（退出战斗走面板里的「返回主页面」）");
+
+                // 设置面板事件：保存 / 取消 / 继续 / 关闭 → 只关面板（留在战斗）；
+                // 「返回主页面」→ 关面板 + 切回主菜单。
+                // 与 MainMenuState 订阅同一批事件不会冲突：两个状态不会同时存活 ——
+                // GameState.OnExit 先退订，MainMenuState.OnEnter 才订阅。
+                EventBus.Subscribe(GameEvent.WeaponSlotClicked,      OnWeaponSlotClicked);
+                EventBus.Subscribe(GameEvent.SettingSaveClicked,     OnSettingClosed);
+                EventBus.Subscribe(GameEvent.SettingCancelClicked,   OnSettingClosed);
+                EventBus.Subscribe(GameEvent.SettingContinueClicked, OnSettingClosed);
+                EventBus.Subscribe(GameEvent.SettingBackHomeClicked, OnSettingBackHome);
 
                 // 兜底：清掉可能残留的上一次地牢（异常路径下 OnExit 没跑到时）
                 DestroyDungeonRoot();
+
+                // 开新一局：金币清零并广播 CoinChanged（金币是局内货币，不跨局）
+                Modules.Wallet.ResetRun();
+
+                // 开战斗 HUD（血条 / 体力 / 魔法 / 金币），与主菜单同一套 UIManager 写法
+                _ = OpenHudAsync();
 
                 // 通过 IAppBridge 拿场景里 LevelConfigHolder 注入的 LevelConfig
                 // （prefab 直接引用 Art/Prefabs/，不走 Resources.Load / YooAsset address）
@@ -241,29 +271,95 @@ namespace CryptWalker.HotUpdate.GameFlow
                     return;
                 }
 
-                // 临时入口：生成肉鸽关卡（房间 prefab + 敌人 + 玩家位置）
+                // 临时入口：生成肉鸽关卡（房间 + 走廊 + NavGrid + 玩家 + 敌人）
+                // 分帧生成：不再卡住主线程；生成途中按 ESC 会被内部的 Aborted 检查安全终止
                 var root = new GameObject("DungeonRoot");
                 Owner.DungeonRoot = root;   // 记下根节点，退出战斗时整棵回收
-                DungeonGenerator.Generate(root.transform, levelConfig);
+                _ = GenerateDungeonAsync(root.transform, levelConfig);
+            }
+
+            /// <summary>
+            /// 异步生成地牢（分帧），并全程给加载界面喂进度。
+            /// 异常只记日志，不让它从 fire-and-forget 的任务里逃逸。
+            ///
+            /// 为什么这里要显示加载界面：地牢生成（几十帧）+ A* 扫图（实测 ~230ms 主线程卡顿）
+            /// 加起来有明显一顿 —— 用加载界面盖住它，比让玩家看着空场景发呆好。
+            /// </summary>
+            private async System.Threading.Tasks.Task GenerateDungeonAsync(Transform parent, LevelConfig config)
+            {
+                var bridge = GameRoot.Bridge;
+
+                // 从 0.6 起步：前面的 0~0.6 是"点进战斗 / 切场景 / 初始化"（AOT 侧已经走过一遍）
+                bridge?.ShowLoading(0.6f);
+                try
+                {
+                    await DungeonGenerator.GenerateAsync(parent, config,
+                        p => bridge?.SetLoadingProgress(Mathf.Lerp(0.6f, 1f, p)));
+                }
+                catch (System.Exception e)
+                {
+                    Log.Error($"[GameFlow] 生成关卡异常：{e}");
+                }
+                finally
+                {
+                    // 无论成败都要收掉，否则生成失败时会永远卡在加载画面上
+                    bridge?.HideLoading();
+                }
             }
 
             public override void OnUpdate()
             {
                 _elapsed += Time.deltaTime;
-                if (_elapsed > 0.5f && Input.GetKeyDown(KeyCode.Escape))
+
+                // 开局 0.5 秒内的 ESC 不响应：从主菜单点「开始游戏」的那次输入要落在主菜单侧，
+                // 否则会出现「刚进战斗就弹出设置面板」。（沿用原来的防抖时长）
+                if (_elapsed <= 0.5f) return;
+                if (!Input.GetKeyDown(KeyCode.Escape)) return;
+
+                // ESC 语义：没开设置 → 开；已经开着 → 关（暂停菜单的通用习惯）。
+                // 不想要「再按一次关闭」就删掉下面这个 if 分支，ESC 只负责打开。
+                if (UIManager.Instance?.GetPanel(SettingPanel.PanelId) != null)
                 {
-                    Log.Info("[GameFlow] 战斗：返回主菜单");
-                    Owner.ChangeTo<MainMenuState>();
+                    Log.Info("[GameFlow] 战斗：ESC 关闭设置面板");
+                    CloseSetting();
+                }
+                else
+                {
+                    Log.Info("[GameFlow] 战斗：ESC 打开设置面板");
+                    _ = OpenSettingAsync();
                 }
             }
 
             public override void OnExit()
             {
+                // 先退订设置事件 + 关掉可能还开着的设置面板：
+                // 异常路径或强制切状态时，面板不会残留、事件也不会重复处理
+                EventBus.Unsubscribe(GameEvent.WeaponSlotClicked,      OnWeaponSlotClicked);
+                EventBus.Unsubscribe(GameEvent.SettingSaveClicked,     OnSettingClosed);
+                EventBus.Unsubscribe(GameEvent.SettingCancelClicked,   OnSettingClosed);
+                EventBus.Unsubscribe(GameEvent.SettingContinueClicked, OnSettingClosed);
+                EventBus.Unsubscribe(GameEvent.SettingBackHomeClicked, OnSettingBackHome);
+                CloseSetting();
+
                 Log.Info($"[GameFlow] 退出战斗，存活 {_elapsed:F1} 秒");
+                HUDPanel.Close();   // 收 HUD（含金币控件）并退订事件
                 // 修复：销毁地牢根节点 —— 房间/走廊 Tilemap、玩家、敌人都是它的子物体，随之一起回收。
                 // 原实现按名字 Find("player")/Find("DungeonMap") 清理，但实例名是 "player(Clone)"，
                 // 且 DungeonRoot 从未被销毁 → 每进一次战斗就泄漏一整套地牢。
                 DestroyDungeonRoot();
+            }
+
+            /// <summary>异步开 HUD + 绑定控件（与 MainMenuState.OpenPanelAsync 同一套写法）</summary>
+            private async System.Threading.Tasks.Task OpenHudAsync()
+            {
+                try
+                {
+                    await HUDPanel.ShowAsync();
+                }
+                catch (System.Exception e)
+                {
+                    Log.Error($"[GameFlow] HUD 打开失败：{e.Message}");
+                }
             }
 
             /// <summary>销毁地牢根节点（用 Destroy 而非 DestroyImmediate：运行时销毁应走正常回收流程）。</summary>
@@ -272,6 +368,75 @@ namespace CryptWalker.HotUpdate.GameFlow
                 if (Owner == null || Owner.DungeonRoot == null) return;
                 Object.Destroy(Owner.DungeonRoot);
                 Owner.DungeonRoot = null;
+            }
+
+            // ==================== 设置面板（战斗内 = 暂停菜单） ====================
+
+            /// <summary>异步开设置面板 + 绑定控件（与 MainMenuState.OpenSettingAsync 同一套写法）</summary>
+            private async System.Threading.Tasks.Task OpenSettingAsync()
+            {
+                if (_settingOpening) return;   // 连按 ESC 只算一次
+                _settingOpening = true;
+                try
+                {
+                    var panel = await UIManager.Instance.OpenPanelAsync(SettingPanel.PanelId);
+                    if (panel == null) return;
+
+                    SettingPanel.Bind(panel);
+                }
+                catch (System.Exception e)
+                {
+                    Log.Error($"[GameFlow] 战斗内设置面板打开失败：{e.Message}");
+                }
+                finally
+                {
+                    _settingOpening = false;
+                }
+            }
+
+            /// <summary>关设置面板（没开也安全：UIManager 内部会忽略）</summary>
+            private void CloseSetting()
+            {
+                UIManager.Instance?.ClosePanel(SettingPanel.PanelId);
+            }
+
+            /// <summary>设置面板「保存 / 取消 / 继续 / 关闭」→ 只关面板，留在战斗中</summary>
+            private void OnSettingClosed(object _)
+            {
+                CloseSetting();
+            }
+
+            /// <summary>
+            /// 选武器面板点了某个槽位 → 切武器 → 广播结果 ✓
+            ///
+            /// 分工（AGENTS.md §5.3 ✓）：
+            ///   View（HUDPanel ✗）：只 Raise(WeaponSlotClicked) ✓ 不碰 PlayerController ✓
+            ///   Controller（本类 ✓）：收到后调玩家 ✓，再把【事实】广播回去 ✓
+            ///     → HUD 靠 WeaponSwitched 刷新图标 ✓ 两边都不持有对方引用 ✓
+            ///
+            /// 注意 ✓：切失败了（同槽位 / 切换硬直内 ✓）就**不发** WeaponSwitched ✓
+            /// —— 否则 UI 会以为换了 ✓ 高亮和实际不一致 ✓
+            /// </summary>
+            private void OnWeaponSlotClicked(object payload)
+            {
+                if (!(payload is int slot)) return;
+
+                var pc = CryptWalker.HotUpdate.Entity.Player.PlayerController.Instance;
+                if (pc == null)
+                {
+                    Log.Warn("[GameFlow] 切换武器失败：找不到 PlayerController.Instance");
+                    return;
+                }
+
+                if (pc.SwitchWeaponBySlot(slot))
+                    EventBus.Raise(GameEvent.WeaponSwitched, slot);
+            }
+
+            /// <summary>设置面板「返回主页面」→ 关面板 + 切回主菜单（战斗的唯一退出入口）</summary>
+            private void OnSettingBackHome(object _)
+            {
+                CloseSetting();
+                Owner.ChangeTo<MainMenuState>();
             }
         }
 
