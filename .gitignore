@@ -105,3 +105,18 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# ===== HybridCLR =====
+# HybridCLRData 由菜单 HybridCLR/Installer 生成：
+#   - LocalIl2CppData-*  打过 HybridCLR 补丁的 il2cpp 副本（体积最大）
+#   - hybridclr_repo / il2cpp_plus_repo  两个 git 仓库克隆（内含嵌套 .git）
+# 实测约 800 MB / 8576 个文件，属于本地产物，绝不能提交。
+/HybridCLRData/
+
+# HybridCLR 构建产物（热更 dll + AOT 补充元数据）：
+# 由菜单 HybridCLR/Generate/All 或打包流程生成，是二进制且每次构建都会重写。
+# 只忽略 dll 与其 .meta，保留目录结构与目录 .meta，保证 clone 后有正确路径。
+/[Aa]ssets/StreamingAssets/HybridCLR/AOTMetadata/*.dll
+/[Aa]ssets/StreamingAssets/HybridCLR/AOTMetadata/*.dll.meta
+/[Aa]ssets/StreamingAssets/HybridCLR/HotUpdateDlls/*.dll
+/[Aa]ssets/StreamingAssets/HybridCLR/HotUpdateDlls/*.dll.meta
