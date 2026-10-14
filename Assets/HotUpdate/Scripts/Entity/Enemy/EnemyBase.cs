@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Text;
 using CryptWalker.HotUpdate.Entity.Player;
+using CryptWalker.Main.Bridge;         // IHotTunable（AOT 代理注入配置）
+using CryptWalker.Main.Data;           // EnemyConfig（AOT 的敌人数值配置）
 using UnityEngine;
 
 namespace CryptWalker.HotUpdate.Entity.Enemy
@@ -15,7 +17,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
     /// 方向协议与玩家一致：Facing 1=South 2=Left 3=Right 4=North
     /// 动画命名：{enemyName}_{动作}{方向}，如 Orc1_AttackSouth
     /// </summary>
-    public class EnemyBase : MonoBehaviour
+    public class EnemyBase : MonoBehaviour, IHotTunable
     {
         [Header("配置（对应策划案 5.2 敌人属性）")]
         [SerializeField] private string enemyName = "Orc1";   // 必须 = clip 前缀（Orc1/Vampires1...）
@@ -28,6 +30,12 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         [SerializeField] private float attackHitDelay = 0.3f; // 命中延迟（动画挥击帧）
         [SerializeField] private float defense = 10f;         // 防御（策划案 §3.3 减伤公式）
         [SerializeField] private bool isBoss = false;         // Boss 标记（策划案 §3.2 剧毒爆燃衰  减）
+
+        [Header("掉落（策划案 §二 局内循环：击杀获取金币）")]
+        [Tooltip("击杀掉落金币数。Boss 会自动按 BOSS_COIN_MULTIPLIER 放大")]
+        [SerializeField] private int coinDrop = 2;
+        /// <summary>Boss 金币倍率（策划案：精英/Boss 奖励更高）</summary>
+        private const int BOSS_COIN_MULTIPLIER = 5;
 
         [Header("击退")]
         [Tooltip("击退速度的衰减率下限（单位/秒²）。调大 → 击退更干脆；实际衰减率还会被 duration 顶上去，保证在 duration 内衰减完")]
@@ -43,7 +51,8 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         [Tooltip("卡住判定的观察窗口（秒）：窗口内实际走的路程不足期望的 40% 才算卡住（与帧率无关）")]
         [SerializeField] private float stuckCheckWindow = 0.5f;
 
-        [Tooltip("【排查用】勾选后每秒打印一次寻路状态 + 可走格 ASCII 图。定位完问题请关掉。")]
+        [Tooltip("【排查用】勾选后每秒打印一次寻路状态 + 可走格 ASCII 图。定位完问题请关掉。" +
+                 "（日志级别是 Info，Release 包里会被编译期自动剔除，不用担心带进正式包）")]
         [SerializeField] private bool debugPath = false;
 
         [Header("元素反应状态")]
@@ -58,8 +67,12 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
 
         // ==================== A* 寻路状态 ====================
         private AI.NavGrid _navGrid;                       // 可走性网格（由 DungeonGenerator 注入）
-        private AI.AStarGrid _astar;                       // 每个敌人一个实例（内部缓冲复用，零 GC）
-        private readonly List<Vector2Int> _path = new List<Vector2Int>(128);
+        private AI.AStarGrid _astar;                       // 自写 A*，现在只作插件不可用时的退回
+        // 路径点用【世界坐标】：A* 插件返回的是 vectorPath（已做视线简化），
+        // 直接用它就能吃到插件的平滑结果；若转回格子中心，等于又把路径拉回折线。
+        private readonly List<Vector3> _path = new List<Vector3>(128);
+        // 退回自写 A* 时的中转缓冲（那个还是格子坐标）
+        private readonly List<Vector2Int> _legacyCellPath = new List<Vector2Int>(128);
         private bool _hasPath;
         private int _pathIndex;
         private float _nextRepathTime;
@@ -100,6 +113,8 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
         public float Attack => attackDamage;   // 别名（策划案 §3.3 元素反应公式用 Attack）
         public float Defense => defense;
         public bool IsBoss => isBoss;
+        /// <summary>击杀实际掉落金币数（Boss 放大）</summary>
+        public int CoinDrop => isBoss ? coinDrop * BOSS_COIN_MULTIPLIER : coinDrop;
         public bool IsDead => Hp <= 0f;
         public bool IsBlinded => Time.time < _blindExpireTime;
         public bool IsStunned => Time.time < _stunExpireTime;
@@ -120,6 +135,46 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
             // 禁用玩家层与敌人层之间的物理碰撞（玩家可穿过敌人，但攻击判定仍生效）
             // 层号：Player=8, Enemy=9（见 ProjectSettings/TagManager.asset）
             Physics2D.IgnoreLayerCollision(8, 9, true);
+        }
+
+        /// <summary>
+        /// 注入敌人数值（由 AOT 侧的 EnemyProxy 在运行时调用 ✗）。
+        ///
+        /// ⚠️【必须重新派生，不能只赋值】✗
+        ///   本组件现在是运行时 AddComponent 出来的 ✗ → Unity 会**立刻**执行上面的 Awake ✓
+        ///   而 Awake 已经消费过这些字段了 ✗：
+        ///       Hp = maxHp                          ← 直接用了 maxHp
+        ///       if (sightRange <= 0.1f) sightRange = 6f;   ← 直接用了 sightRange
+        ///   所以只赋值不重算 ✗ → Hp 会停在"Awake 那一刻的 maxHp" ✗
+        ///   （现在配置恰好等于默认值 ✓ 看不出来 ✗；哪天把某类敌人写成 maxHp=300 就会立刻暴露 ✓）
+        ///
+        /// 一句话规矩 ✓：**凡 Awake 里"用过"的字段 ✗，注入之后都要重新派生一次 ✓**
+        /// </summary>
+        public void ApplyTuning(object tuning)
+        {
+            if (!(tuning is EnemyConfig c)) return;
+
+            enemyName = c.enemyName;
+            maxHp = c.maxHp;
+            moveSpeed = c.moveSpeed;
+            sightRange = c.sightRange;
+            attackRange = c.attackRange;
+            attackInterval = c.attackInterval;
+            attackDamage = c.attackDamage;
+            attackHitDelay = c.attackHitDelay;
+            defense = c.defense;
+            isBoss = c.isBoss;
+            coinDrop = c.coinDrop;
+            knockbackDecay = c.knockbackDecay;
+            repathInterval = c.repathInterval;
+            repathOnTargetMove = c.repathOnTargetMove;
+            waypointReachDist = c.waypointReachDist;
+            stuckCheckWindow = c.stuckCheckWindow;
+            debugPath = c.debugPath;
+
+            // —— 重新派生 Awake 里算过的值 ✗ ——
+            Hp = maxHp;
+            if (sightRange <= 0.1f) sightRange = 6f;   // 与 Awake 里的兜底保持一致 ✓
         }
 
         private void Start()
@@ -335,7 +390,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
             // 跳过已经走到的 waypoint（可能一次跨过多个）
             while (_pathIndex < _path.Count)
             {
-                Vector2 wp = AI.NavGrid.CellToWorld(_path[_pathIndex]);
+                Vector2 wp = _path[_pathIndex];   // 已是世界坐标
                 if ((wp - (Vector2)transform.position).sqrMagnitude > waypointReachDist * waypointReachDist) break;
                 _pathIndex++;
             }
@@ -349,7 +404,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
                 return;
             }
 
-            MoveTowardPoint(AI.NavGrid.CellToWorld(_path[_pathIndex]), 1f);
+            MoveTowardPoint(_path[_pathIndex], 1f);   // 已是世界坐标
             CheckStuck();
         }
 
@@ -380,11 +435,12 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
                 if (_path.Count > show) sb.Append($" ...(共 {_path.Count} 点)");
                 sb.Append("    （* = 当前跟踪的 waypoint）\n");
 
-                // 有对角步才说明 8 方向真的生效了；全是 0 就是退化成 4 方向了
-                int diagonalSteps = 0;
-                for (int i = 1; i < _path.Count; i++)
-                    if (_path[i].x != _path[i - 1].x && _path[i].y != _path[i - 1].y) diagonalSteps++;
-                sb.Append($"  路径对角步数={diagonalSteps}/{Mathf.Max(0, _path.Count - 1)}    ← 0 = A* 只走了 4 方向\n");
+                // 路径现在来自 A* 插件的 vectorPath（世界坐标 + 视线简化），
+                // "对角步数"是格子坐标才有的概念，改看路点数与总长：
+                // 路点数比原来的格子路径明显更少 = 插件的简化生效了。
+                float totalLen = 0f;
+                for (int i = 1; i < _path.Count; i++) totalLen += Vector3.Distance(_path[i - 1], _path[i]);
+                sb.Append($"  路点数={_path.Count}（格子路径会明显更多）  路径总长={totalLen:F1}\n");
             }
 
             sb.Append(_navGrid.DumpRegion(cur, 24, 10, cur, goal));
@@ -403,7 +459,15 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
                    >= repathOnTargetMove * repathOnTargetMove;
         }
 
-        /// <summary>跑一次 A*，结果写入可复用的 _path。无论成败都会推进节流时间戳。</summary>
+        /// <summary>
+        /// 跑一次寻路，结果写入可复用的 _path。无论成败都会推进节流时间戳。
+        ///
+        /// 路径来源（方案 B）：
+        ///   1) 首选 **A* Pathfinding Project** 的 ABPath —— 只借它"算路径"，
+        ///      沿路径怎么走仍然由本类的 MoveAlongPath 负责（手感留在热更层，可热更）。
+        ///   2) 插件不可用（没建图 / 没扫完 / 刚换场景）→ 退回自写的格子 A*，
+        ///      表现会退化但敌人不会当场停摆。
+        /// </summary>
         private void Repath()
         {
             _nextRepathTime = Time.time + repathInterval;
@@ -415,6 +479,18 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
 
             if (_navGrid == null || Target == null) return;
 
+            // —— 1) 首选：A* 插件 ——
+            // 起终点都给【世界坐标实位】，不用吸附格子：插件自己会把不可走的点
+            // 吸附到最近的可走节点，比原来的 CellToWorld/WorldToCell 往返更准。
+            if (AI.AstarPathService.TryFindPath(transform.position, Target.position, _path))
+            {
+                _hasPath = _path.Count > 1;
+                // 第 0 个点是敌人自己所在位置，从下一个开始跟
+                _pathIndex = _hasPath ? 1 : 0;
+                return;
+            }
+
+            // —— 2) 退回：自写的格子 A* ——
             Vector2Int start = CurrentCell;
             Vector2Int goal = AI.NavGrid.WorldToCell(Target.position);
 
@@ -423,11 +499,15 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
             if (!_navGrid.IsWalkable(goal) && !TryFindNearestWalkable(goal, 3, out goal)) return;
 
             if (_astar == null) _astar = new AI.AStarGrid();
-            if (!_astar.FindPath(_navGrid, start, goal, _path)) return;
+            _legacyCellPath.Clear();
+            if (!_astar.FindPath(_navGrid, start, goal, _legacyCellPath)) return;
 
-            _hasPath = _path.Count > 0;
-            // 第 0 个点是敌人自己所在格，从下一个开始跟
-            _pathIndex = _path.Count > 1 ? 1 : 0;
+            // 格子坐标 → 世界坐标（CellToWorld 含格子中心偏移）
+            for (int i = 0; i < _legacyCellPath.Count; i++)
+                _path.Add(AI.NavGrid.CellToWorld(_legacyCellPath[i]));
+
+            _hasPath = _path.Count > 1;
+            _pathIndex = _hasPath ? 1 : 0;
         }
 
         /// <summary>在以 center 为中心、radius 格的方形范围内，由内向外找第一个可走格</summary>
@@ -523,8 +603,13 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
             _sidestepDir = perp;
             _sidestepUntil = Time.time + 0.25f;
 
+            // 诊断日志用 Info 而不是 Warn（AGENTS.md §11.2）：
+            //   · Info 挂了 [Conditional("DEBUG")] → Release 包里连字符串拼接一起被编译期剔除
+            //   · Warn 不会被剔除，而且 Unity 对每条 Warning 都会抓一次托管栈回溯（StackTraceUtility）
+            //     —— 那是真实的 CPU + GC 代价
+            // 这条日志一局里可能打上百次（s_nextDebugTime 是 static，全局每秒一次），所以必须走 Info。
             if (debugPath)
-                Core.Log.Warn($"[PathDebug] {name} 判定卡住 → 侧向脱困 dir=({_sidestepDir.x:F2},{_sidestepDir.y:F2})"
+                Core.Log.Info($"[PathDebug] {name} 判定卡住 → 侧向脱困 dir=({_sidestepDir.x:F2},{_sidestepDir.y:F2})"
                             + "；若周围明明没有墙却频繁出现，说明卡住判定过于敏感");
         }
 
@@ -575,7 +660,7 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
             // 修复：先查 IsDead 防止重复伤害（死亡动画期间敌人还在被打，HP 会变负数）
             if (IsDead) return;
             Hp -= damage;
-            if (IsDead) Fsm.ChangeToDeath();
+            if (IsDead) OnDied();
             else Fsm.ChangeToHit();
         }
 
@@ -597,8 +682,28 @@ namespace CryptWalker.HotUpdate.Entity.Enemy
                 }
             }
             Hp -= damage;
-            if (IsDead) Fsm.ChangeToDeath();
+            if (IsDead) OnDied();
             else Fsm.ChangeToHit();
+        }
+
+        /// <summary>
+        /// 统一的死亡出口 —— 两个 TakeDamage 重载都必须走这里，
+        /// 否则"死亡时该做的事"会漏掉一处（原来就是两处各写一遍，结果两边都漏了广播）。
+        ///
+        /// 修复背景：GameEvent.EnemyDied 在枚举里定义了，但全工程没有一处 Raise，
+        /// 所以击杀一直是"什么都不发生"（不掉金币、不计击杀、回血护符不触发）。
+        /// </summary>
+        private void OnDied()
+        {
+            Fsm.ChangeToDeath();
+
+            // 击杀回调（策划 §4.2 回血护符）。EnemyBase 的注释一直写着"由 EnemyBase.Death 通知玩家"，
+            // 但从来没调过 —— 顺手补上，否则那个遗物永远不会触发。
+            CryptWalker.HotUpdate.Entity.Player.PlayerController.Instance?.OnEnemyKilled();
+
+            // 击杀广播（payload: 敌人实例）→ RunWallet 按 CoinDrop 加金币 → CoinChanged → HUD 金币数字
+            Core.Log.Info($"[Enemy] {name} 被击杀，掉落金币 {CoinDrop}");
+            Core.EventBus.Raise(Core.GameEvent.EnemyDied, this);
         }
 
         /// <summary>
